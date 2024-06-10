@@ -7,7 +7,7 @@ using BalancedMinimumEvolution
 import BalancedMinimumEvolution as BME
 using CSV, DataFrames, Statistics, JuMP, Combinatorics
 
-datasets = ["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82", "RDSM32","RDSM64","RDSM128","RDSM256","RDSM512","RDSM1024"]#,"RDSM2048"]
+datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"]; ["RDSM32_"].*string.(1:50); ["RDSM64_"].*string.(1:50);["RDSM128_"].*string.(1:50);["RDSM256_"].*string.(1:50);["RDSM512_"].*string.(1:50);["RDSM1024_"].*string.(1:50);["RDSM2048_"].*string.(1:50)]
 
 # LNS Matheuristic
 begin

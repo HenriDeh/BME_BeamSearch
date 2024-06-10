@@ -1,0 +1,91 @@
+
+ - FastME 2.1.6.3 - 
+
+
+Paper to be cited:
+
+FastME 2.0 - A comprehensive, accurate and fast distance-based phylogeny inference program.
+	Vincent Lefort, Richard Desper and Olivier Gascuel,
+	Molecular Biology and Evolution 32(10), 2798-800, 2015.
+
+-------------------------------------------------------------------------------
+Settings for this run:
+
+  I                                      Input data type  Matrix          
+  D                                   Number of datasets  1               
+  M                         Initial tree building method  TaxAdd_BalME    
+  N                                   NNI postprocessing  no              
+  S                                   SPR postprocessing  yes             
+
+-------------------------------------------------------------------------------
+Dataset 1
+	Tree length is 0.27213915	Before SPR:     tree length is 0.27213915
+	SPR      1: new tree length is 0.27099803
+	SPR      2: new tree length is 0.27001272
+	SPR      3: new tree length is 0.26925841
+	SPR      4: new tree length is 0.26853951
+	SPR      5: new tree length is 0.26784843
+	SPR      6: new tree length is 0.26727680
+	SPR      7: new tree length is 0.26676257
+	SPR      8: new tree length is 0.26625206
+	SPR      9: new tree length is 0.26575573
+	SPR     10: new tree length is 0.26509347
+	SPR     11: new tree length is 0.26466395
+	SPR     12: new tree length is 0.26427446
+	SPR     13: new tree length is 0.26399086
+	SPR     14: new tree length is 0.26373061
+	SPR     15: new tree length is 0.26342012
+	SPR     16: new tree length is 0.26317092
+	SPR     17: new tree length is 0.26292727
+	SPR     18: new tree length is 0.26271908
+	SPR     19: new tree length is 0.26218805
+	SPR     20: new tree length is 0.26201117
+	SPR     21: new tree length is 0.26132971
+	SPR     22: new tree length is 0.26106506
+	SPR     23: new tree length is 0.26074141
+	SPR     24: new tree length is 0.26047194
+	SPR     25: new tree length is 0.26021727
+	SPR     26: new tree length is 0.25982900
+	SPR     27: new tree length is 0.25929618
+	SPR     28: new tree length is 0.25910196
+	SPR     29: new tree length is 0.25891066
+	SPR     30: new tree length is 0.25874493
+	SPR     31: new tree length is 0.25830978
+	SPR     32: new tree length is 0.25796798
+	SPR     33: new tree length is 0.25750885
+	SPR     34: new tree length is 0.25723834
+	SPR     35: new tree length is 0.25710179
+	SPR     36: new tree length is 0.25702224
+	SPR     37: new tree length is 0.25692672
+	SPR     38: new tree length is 0.25685354
+	SPR     39: new tree length is 0.25668428
+	SPR     40: new tree length is 0.25653299
+	SPR     41: new tree length is 0.25638997
+	SPR     42: new tree length is 0.25617166
+	SPR     43: new tree length is 0.25588057
+	SPR     44: new tree length is 0.25580038
+	SPR     45: new tree length is 0.25573301
+	SPR     46: new tree length is 0.25566833
+	SPR     47: new tree length is 0.25561552
+	SPR     48: new tree length is 0.25554931
+	SPR     49: new tree length is 0.25549953
+	SPR     50: new tree length is 0.25547676
+	SPR     51: new tree length is 0.25545652
+	SPR     52: new tree length is 0.25540904
+	SPR     53: new tree length is 0.25538357
+	SPR     54: new tree length is 0.25537265
+	SPR     55: new tree length is 0.25531323
+	SPR     56: new tree length is 0.25528147
+	SPR     57: new tree length is 0.25524978
+	SPR     58: new tree length is 0.25521818
+	SPR     59: new tree length is 0.25518248
+	SPR     60: new tree length is 0.25514552
+	SPR     61: new tree length is 0.25513993
+	SPR     62: new tree length is 0.25512832
+	SPR     63: new tree length is 0.25509029
+	SPR     64: new tree length is 0.25505231
+	SPR     65: new tree length is 0.25504861
+	SPR     66: new tree length is 0.25491009
+	Performed 66 SPR(s).
+
+	Explained variance : -0.22425661

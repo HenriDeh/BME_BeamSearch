@@ -1,0 +1,196 @@
+
+ - FastME 2.1.6.3 - 
+
+
+Paper to be cited:
+
+FastME 2.0 - A comprehensive, accurate and fast distance-based phylogeny inference program.
+	Vincent Lefort, Richard Desper and Olivier Gascuel,
+	Molecular Biology and Evolution 32(10), 2798-800, 2015.
+
+-------------------------------------------------------------------------------
+Settings for this run:
+
+  I                                      Input data type  Matrix          
+  D                                   Number of datasets  1               
+  M                         Initial tree building method  TaxAdd_BalME    
+  N                                   NNI postprocessing  no              
+  S                                   SPR postprocessing  yes             
+
+-------------------------------------------------------------------------------
+Dataset 1
+	Tree length is 2.45515986	Before SPR:     tree length is 2.45515986
+	SPR      1: new tree length is 2.45018763
+	SPR      2: new tree length is 2.44615176
+	SPR      3: new tree length is 2.44218619
+	SPR      4: new tree length is 2.43798847
+	SPR      5: new tree length is 2.43404883
+	SPR      6: new tree length is 2.42890753
+	SPR      7: new tree length is 2.42599078
+	SPR      8: new tree length is 2.42342929
+	SPR      9: new tree length is 2.42134856
+	SPR     10: new tree length is 2.41928138
+	SPR     11: new tree length is 2.41638473
+	SPR     12: new tree length is 2.41416607
+	SPR     13: new tree length is 2.41215364
+	SPR     14: new tree length is 2.41021516
+	SPR     15: new tree length is 2.40836520
+	SPR     16: new tree length is 2.40655880
+	SPR     17: new tree length is 2.40496979
+	SPR     18: new tree length is 2.40338552
+	SPR     19: new tree length is 2.40185906
+	SPR     20: new tree length is 2.40012029
+	SPR     21: new tree length is 2.39866638
+	SPR     22: new tree length is 2.39748684
+	SPR     23: new tree length is 2.39637919
+	SPR     24: new tree length is 2.39455127
+	SPR     25: new tree length is 2.39289909
+	SPR     26: new tree length is 2.39183466
+	SPR     27: new tree length is 2.39080686
+	SPR     28: new tree length is 2.38983327
+	SPR     29: new tree length is 2.38877815
+	SPR     30: new tree length is 2.38780628
+	SPR     31: new tree length is 2.38683735
+	SPR     32: new tree length is 2.38587405
+	SPR     33: new tree length is 2.38492342
+	SPR     34: new tree length is 2.38397819
+	SPR     35: new tree length is 2.38303362
+	SPR     36: new tree length is 2.38212353
+	SPR     37: new tree length is 2.38123561
+	SPR     38: new tree length is 2.38037587
+	SPR     39: new tree length is 2.37952189
+	SPR     40: new tree length is 2.37877872
+	SPR     41: new tree length is 2.37804500
+	SPR     42: new tree length is 2.37731262
+	SPR     43: new tree length is 2.37659229
+	SPR     44: new tree length is 2.37588332
+	SPR     45: new tree length is 2.37529633
+	SPR     46: new tree length is 2.37470631
+	SPR     47: new tree length is 2.37413973
+	SPR     48: new tree length is 2.37360110
+	SPR     49: new tree length is 2.37309472
+	SPR     50: new tree length is 2.37259045
+	SPR     51: new tree length is 2.37209958
+	SPR     52: new tree length is 2.37165149
+	SPR     53: new tree length is 2.37121339
+	SPR     54: new tree length is 2.37077993
+	SPR     55: new tree length is 2.37028109
+	SPR     56: new tree length is 2.36927562
+	SPR     57: new tree length is 2.36875168
+	SPR     58: new tree length is 2.36831180
+	SPR     59: new tree length is 2.36789908
+	SPR     60: new tree length is 2.36751116
+	SPR     61: new tree length is 2.36705805
+	SPR     62: new tree length is 2.36654588
+	SPR     63: new tree length is 2.36590353
+	SPR     64: new tree length is 2.36552123
+	SPR     65: new tree length is 2.36513844
+	SPR     66: new tree length is 2.36475844
+	SPR     67: new tree length is 2.36438615
+	SPR     68: new tree length is 2.36400660
+	SPR     69: new tree length is 2.36366013
+	SPR     70: new tree length is 2.36331560
+	SPR     71: new tree length is 2.36297118
+	SPR     72: new tree length is 2.36261391
+	SPR     73: new tree length is 2.36227951
+	SPR     74: new tree length is 2.36197070
+	SPR     75: new tree length is 2.36167783
+	SPR     76: new tree length is 2.36139954
+	SPR     77: new tree length is 2.36033746
+	SPR     78: new tree length is 2.36006718
+	SPR     79: new tree length is 2.35981276
+	SPR     80: new tree length is 2.35956579
+	SPR     81: new tree length is 2.35932178
+	SPR     82: new tree length is 2.35907887
+	SPR     83: new tree length is 2.35883874
+	SPR     84: new tree length is 2.35861214
+	SPR     85: new tree length is 2.35839808
+	SPR     86: new tree length is 2.35819153
+	SPR     87: new tree length is 2.35798710
+	SPR     88: new tree length is 2.35758451
+	SPR     89: new tree length is 2.35733111
+	SPR     90: new tree length is 2.35709295
+	SPR     91: new tree length is 2.35687570
+	SPR     92: new tree length is 2.35666498
+	SPR     93: new tree length is 2.35647061
+	SPR     94: new tree length is 2.35620651
+	SPR     95: new tree length is 2.35601696
+	SPR     96: new tree length is 2.35570182
+	SPR     97: new tree length is 2.35552847
+	SPR     98: new tree length is 2.35536013
+	SPR     99: new tree length is 2.35519410
+	SPR    100: new tree length is 2.35504515
+	SPR    101: new tree length is 2.35481729
+	SPR    102: new tree length is 2.35456796
+	SPR    103: new tree length is 2.35442754
+	SPR    104: new tree length is 2.35429302
+	SPR    105: new tree length is 2.35362099
+	SPR    106: new tree length is 2.35308282
+	SPR    107: new tree length is 2.35289454
+	SPR    108: new tree length is 2.35273413
+	SPR    109: new tree length is 2.35258534
+	SPR    110: new tree length is 2.35245187
+	SPR    111: new tree length is 2.35231978
+	SPR    112: new tree length is 2.35219225
+	SPR    113: new tree length is 2.35207699
+	SPR    114: new tree length is 2.35196349
+	SPR    115: new tree length is 2.35184676
+	SPR    116: new tree length is 2.35155968
+	SPR    117: new tree length is 2.35124685
+	SPR    118: new tree length is 2.35095664
+	SPR    119: new tree length is 2.35054560
+	SPR    120: new tree length is 2.35034604
+	SPR    121: new tree length is 2.35006671
+	SPR    122: new tree length is 2.34985363
+	SPR    123: new tree length is 2.34964412
+	SPR    124: new tree length is 2.34945905
+	SPR    125: new tree length is 2.34930123
+	SPR    126: new tree length is 2.34919038
+	SPR    127: new tree length is 2.34909216
+	SPR    128: new tree length is 2.34899113
+	SPR    129: new tree length is 2.34891214
+	SPR    130: new tree length is 2.34883514
+	SPR    131: new tree length is 2.34876100
+	SPR    132: new tree length is 2.34870655
+	SPR    133: new tree length is 2.34863006
+	SPR    134: new tree length is 2.34854249
+	SPR    135: new tree length is 2.34842904
+	SPR    136: new tree length is 2.34819532
+	SPR    137: new tree length is 2.34811782
+	SPR    138: new tree length is 2.34806363
+	SPR    139: new tree length is 2.34801113
+	SPR    140: new tree length is 2.34788819
+	SPR    141: new tree length is 2.34780421
+	SPR    142: new tree length is 2.34775235
+	SPR    143: new tree length is 2.34770734
+	SPR    144: new tree length is 2.34766834
+	SPR    145: new tree length is 2.34763444
+	SPR    146: new tree length is 2.34759736
+	SPR    147: new tree length is 2.34757500
+	SPR    148: new tree length is 2.34755445
+	SPR    149: new tree length is 2.34753399
+	SPR    150: new tree length is 2.34747175
+	SPR    151: new tree length is 2.34735321
+	SPR    152: new tree length is 2.34730883
+	SPR    153: new tree length is 2.34721534
+	SPR    154: new tree length is 2.34719357
+	SPR    155: new tree length is 2.34717960
+	SPR    156: new tree length is 2.34716770
+	SPR    157: new tree length is 2.34715640
+	SPR    158: new tree length is 2.34714035
+	SPR    159: new tree length is 2.34672354
+	SPR    160: new tree length is 2.34667359
+	SPR    161: new tree length is 2.34666383
+	SPR    162: new tree length is 2.34665551
+	SPR    163: new tree length is 2.34664787
+	SPR    164: new tree length is 2.34663289
+	SPR    165: new tree length is 2.34662615
+	SPR    166: new tree length is 2.34649726
+	SPR    167: new tree length is 2.34649452
+	SPR    168: new tree length is 2.34643193
+	SPR    169: new tree length is 2.34633735
+	SPR    170: new tree length is 2.34631319
+	SPR    171: new tree length is 2.34625087
+	Performed 171 SPR(s).
+
+	Explained variance : 0.24407937

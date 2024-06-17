@@ -6,20 +6,23 @@ Pkg.instantiate()
 using BalancedMinimumEvolution
 import BalancedMinimumEvolution as BME
 using CSV, DataFrames, Statistics, JuMP, Combinatorics
+import Random
 
-datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"]; ["RDSM32_"].*string.(1:50); ["RDSM64_"].*string.(1:50);["RDSM128_"].*string.(1:50);["RDSM256_"].*string.(1:50);["RDSM512_"].*string.(1:50);["RDSM1024_"].*string.(1:50);["RDSM2048_"].*string.(1:50)]
+#datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]]; ["RDSM32_"].*string.(1:50); ["RDSM64_"].*string.(1:50);["RDSM128_"].*string.(1:50);["RDSM256_"].*string.(1:50);["RDSM512_"].*string.(1:50);["RDSM1024_"].*string.(1:50);["RDSM2048_"].*string.(1:50)]
+datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]; ["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
 
 # LNS Matheuristic
 begin
-    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r)) , exact = e, nj_criterion = r) for (e,r) in Iterators.product((true, false),(true, false))]
+    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r))*"_$i", exact = e, nj_criterion = r, trial=i) for (e,r,i) in Iterators.product((true, false),(true, false),1:10)]
     if !isfile("data/LNS_results.csv") 
-        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], exact = [], nj = [], time = [], tree_path = [], diameter_fastme=[],diameter_heuristic=[],pair_changed =[], proportion = [], extrema=[],avg_change=[])
+        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], exact = [], nj = [], time = [], tree_path = [], diameter_fastme=[],diameter_heuristic=[],pair_changed =[], proportion = [], extrema=[],avg_change=[],trial=[])
         CSV.write("data/LNS_results.csv", df)
     end
     global counter = 0
     df = CSV.read("data/LNS_results.csv", DataFrame)
     for dataset in datasets
         for experiment in experiments
+            Random.seed!(counter)
             global counter += 1
             if nrow(df) >= counter 
                 continue #checkpointing
@@ -38,7 +41,7 @@ begin
             tree_path = joinpath(exp_path, "tree.nwk")
             D = read_distance_matrix(path);
             n = only(unique(size(D)))
-            K = min(exact ? 20 : 40, n-n%5)
+            K = min(exact ? 20 : 30, n-n%5)
             time = n < 20 ? 3 : n > 75 ? 60 : 15
             new_tree_path = hybrid_matheuristic(path, K, tree_path, max_time = time*60, max_it = Inf, fastme_it = Inf, inittree = false, nj_criterion = nj_criterion, repair_iterate = 1, exact = exact, relax = true, )
             ## Tree differences
@@ -55,7 +58,7 @@ begin
             @show avg = mean([d for d in diffplm if d != 0]) #number of pairs with new tau 
             @show prop = changes/length(combinations(1:n,2)) #proportion of pairs with a new tau
             @show ext=extrema(diffplm)
-            push!(df,(dataset=dataset, fastme = tlfm, heuristic = tlmh, gap = tlmh/tlfm-1, exact = exact, nj = nj_criterion, time = time, tree_path = new_tree_path, diameter_fastme=diafm,diameter_heuristic=diamh,pair_changed =changes, proportion = prop, extrema=ext,avg_change=avg), promote = true)
+            push!(df,(dataset=dataset, fastme = tlfm, heuristic = tlmh, gap = tlmh/tlfm-1, exact = exact, nj = nj_criterion, time = time, tree_path = new_tree_path, diameter_fastme=diafm,diameter_heuristic=diamh,pair_changed =changes, proportion = prop, extrema=ext,avg_change=avg,trial=experiment.trial), promote = true)
             CSV.write("data/LNS_results.csv", df)
         end
     end

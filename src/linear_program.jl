@@ -38,7 +38,7 @@ function lp_exact_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix 
         @constraint(model, s[first(TAXA),q,j] >= 1 + y[(j,minmax(p,q)...)])
         @constraint(model, s[first(TAXA),q,p] >= 1 + y[(p,minmax(q,j)...)])
     end
-    @objective(model, Min, sum(D[i,j]*sum(exp2(n-l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
+    @objective(model, Min, sum(D[i,j]*sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
     if relax
         relax_integrality(model)
     end
@@ -63,7 +63,7 @@ function lp_relaxation_x_tau(g, D::Matrix, c; relax = true) # D is a distance ma
         c_manifold, 
             sum(l*exp2(-l)*x[i,j,l] for i in TAXA, j in TAXA, l in LENGTHS if i≠j) == (2n-3)
     end
-    @objective(model, Min, sum(D[i,j]*sum(exp2(l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
+    @objective(model, Min, sum(D[i,j]*sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
     if relax
         relax_integrality(model)
     end

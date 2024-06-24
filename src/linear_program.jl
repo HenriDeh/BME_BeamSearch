@@ -4,15 +4,17 @@ export lp_relaxation_x_tau, weak_buneman_oracle
 function lp_exact_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
     n = degree(g,c)
     TAXA = sort(collect(neighbors(g,c)))
+    taxon1 = first(TAXA)
+    TAXA2n = TAXA[2:end]
     LENGTHS = 2:n-1
     model = Model(OPTIMIZER, add_bridges = false)
     set_string_names_on_creation(model, false)
     @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin)
+    @variable(model, _y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p < q], Bin)
+    
+    @expression(model, y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q], _y[j, minmax(p,q)...])
     @expression(model, x[i=TAXA, j=TAXA, l=LENGTHS; i≠j], _x[minmax(i,j)...,l])
     @expression(model, τ[i=TAXA, j=TAXA; i≠j], sum(l*_x[minmax(i,j)...,l] for l in LENGTHS))
-    @variable(model, 1<=s[i=TAXA[1:end-1], j=TAXA, k=TAXA; i≠j && j≠k]<=n-2, Int)
-    bun_idxs = vcat([(j,p,q) for (j,p,q) in combinations(TAXA, 3) if j > TAXA[1]], [(p,j,q) for (j,p,q) in combinations(TAXA, 3) if j > TAXA[1]], [(q,j,p) for (j,p,q) in combinations(TAXA, 3) if j > TAXA[1]])
-    @variable(model, y[bun_idxs], Bin)
 
     @constraints model begin
         c_one_length[i=TAXA, j=TAXA; i<j], 
@@ -21,23 +23,18 @@ function lp_exact_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix 
             sum(sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for j in TAXA if j ≠ i)  == 0.5
         c_manifold, 
             sum(l*exp2(-l)*x[i,j,l] for i in TAXA, j in TAXA, l in LENGTHS if i≠j) == (2n-3)
-        c_str_triangular[i=TAXA[1:end-1], j=TAXA, k=TAXA; i≠j && j≠k && k > i],
-            τ[j,k] + τ[i,j] == 2*s[i,j,k] + τ[i,k]
-        c_bun_sum[j in TAXA[2:end-2], p in TAXA[1:end-1], q in TAXA; p>j && q>p],
-            y[(j,p,q)] + y[(p,j,q)] + y[(q,j,p)] == 1            
+        
+        c_str_triangular[i=TAXA2n, j=TAXA2n; i ≠ j],
+            τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2
+        c_str_triangular2[i=TAXA2n, j=TAXA2n; i ≠ j],
+            τ[taxon1, i] + τ[i,j] - τ[taxon1,j] >= 2
+        
+        c_bun_sum[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
+            y[j,p,q] + y[p,j,q] + y[q,j,p] == 1            
+        c_buneman[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
+            τ[taxon1,j] + τ[p,q] >= 2(1 - y[q,j,p]) + τ[taxon1,p] + τ[j,q] - (2n - 2)y[j,p,q]
+    end
 
-    end
-    for (j, p, q) in combinations(TAXA, 3)
-        if j == first(TAXA)
-            continue
-        end
-        @constraint(model, s[first(TAXA),p,j] >= 1 + y[(j,minmax(p,q)...)])
-        @constraint(model, s[first(TAXA),p,q] >= 1 + y[(q,minmax(p,j)...)])
-        @constraint(model, s[first(TAXA),j,p] >= 1 + y[(p,minmax(j,q)...)])
-        @constraint(model, s[first(TAXA),j,q] >= 1 + y[(q,minmax(j,p)...)])
-        @constraint(model, s[first(TAXA),q,j] >= 1 + y[(j,minmax(p,q)...)])
-        @constraint(model, s[first(TAXA),q,p] >= 1 + y[(p,minmax(q,j)...)])
-    end
     @objective(model, Min, sum(D[i,j]*sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
     if relax
         relax_integrality(model)

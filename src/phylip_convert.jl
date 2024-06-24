@@ -32,6 +32,7 @@ function to_phylip(path::String)
                 continue
             else
                 splits = split(ln, ' ')
+                filter!(!=(""), splits)
                 if !startswith(ln, string(counter)) || length(splits) > n
                     if length(splits) > n
                         splits = splits[(1 + length(splits) - n):end]
@@ -43,7 +44,7 @@ function to_phylip(path::String)
                 counter += 1
             end
         end
-        for line in rl[2:end]
+        for line in rl[end-n+1:end]
             println(file, line)
         end
     end

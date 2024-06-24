@@ -8,8 +8,7 @@ import BalancedMinimumEvolution as BME
 using CSV, DataFrames, Statistics, JuMP, Combinatorics
 import Random
 
-#datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]]; ["RDSM32_"].*string.(1:50); ["RDSM64_"].*string.(1:50);["RDSM128_"].*string.(1:50);["RDSM256_"].*string.(1:50);["RDSM512_"].*string.(1:50);["RDSM1024_"].*string.(1:50);["RDSM2048_"].*string.(1:50)]
-datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]; ["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
+datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_F84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_F84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]; ["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
 
 # LNS Matheuristic
 begin
@@ -55,7 +54,7 @@ begin
             @show diamh=maximum(plmmh)
             diffplm = plmfm .- plmmh
             @show changes = sum([1 for d in diffplm if d != 0], init = 0)÷2 #number of pairs with new tau 
-            @show avg = mean([d for d in diffplm if d != 0]) #number of pairs with new tau 
+            @show avg = mean([d for d in diffplm if d != 0]) #average distance change 
             @show prop = changes/length(combinations(1:n,2)) #proportion of pairs with a new tau
             @show ext=extrema(diffplm)
             push!(df,(dataset=dataset, fastme = tlfm, heuristic = tlmh, gap = tlmh/tlfm-1, exact = exact, nj = nj_criterion, time = time, tree_path = new_tree_path, diameter_fastme=diafm,diameter_heuristic=diamh,pair_changed =changes, proportion = prop, extrema=ext,avg_change=avg,trial=experiment.trial), promote = true)

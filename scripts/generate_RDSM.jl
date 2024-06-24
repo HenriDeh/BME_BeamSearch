@@ -1,4 +1,3 @@
-import Random.randperm
 include("../src/phylip_convert.jl")
 
 function generate_symmetric_doubly_stochastic(n; tol=1e-9, max_iter=1000)

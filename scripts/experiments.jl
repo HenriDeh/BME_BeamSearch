@@ -43,7 +43,7 @@ begin
             n = only(unique(size(D)))
             K = min(exact ? 20 : 30, n-n%5)
             time = n < 20 ? 3 : n > 75 ? 60 : 15
-            new_tree_path = hybrid_matheuristic(path, K, tree_path, max_time = time*60, max_it = Inf, fastme_it = Inf, inittree = false, nj_criterion = nj_criterion, repair_iterate = 1, exact = exact, relax = true, )
+            new_tree_path = LNS_matheuristic(path, K, tree_path, max_time = time*60, max_it = Inf, fastme_it = Inf, inittree = false, nj_criterion = nj_criterion, repair_iterate = 1, exact = exact, relax = true, )
             ## Tree differences
             gfm = ubtgraph_from_nwk(tree_path)
             gmh = ubtgraph_from_nwk(new_tree_path)
@@ -102,7 +102,7 @@ begin
             end
             D_ = BME.extend_distance(D);
 
-            rtime = @elapsed gmh = BME.iterated_kLPNJ(g, D_, c, exact = exact, nj_criterion = nj_criterion)
+            rtime = @elapsed gmh = BME.LP_heuristic(g, D_, c, exact = exact, nj_criterion = nj_criterion)
             tl = BME.tree_length(path_length_matrix(gmh), D)
 
             gfm = ubtgraph_from_nwk(tree_path)
@@ -111,7 +111,7 @@ begin
             gnj = neighbor_joining(D)
             tlnj = tree_length(path_length_matrix(gnj), D)
 
-            model = BME.lp_exact_x_tau(g, D_, c; relax = true)
+            model = BME.MIP_complete(g, D_, c; relax = true)
             optimize!(model)
             τ_tilde = similar(D)
             for ((i,j), dist) in value.(model[:τ]).data 
@@ -121,7 +121,7 @@ begin
             end
             radius_exact = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
             
-            model = BME.lp_relaxation_x_tau(g, D_, c; relax = true)
+            model = BME.MIP_reduced(g, D_, c; relax = true)
             optimize!(model)
             for ((i,j), dist) in value.(model[:τ]).data 
                 τ_tilde[i,j] = dist

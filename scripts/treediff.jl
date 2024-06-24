@@ -9,7 +9,7 @@ path = joinpath("data", dataset, dataset*".txt")
 tree_path = path*"_tree.nwk"
 D = read_distance_matrix(path);
 n = only(unique(size(D)))
-hybrid_matheuristic(path, 15, tree_path, k=1, max_time = 0.25*60, max_it = Inf, fastme_it = Inf, inittree = false, lifted_tri = false, weak_bun = false, contraction = true, adaptive = false, repair_iterate = 1, exact = false, relax = true)
+LNS_matheuristic(path, 15, tree_path, k=1, max_time = 0.25*60, max_it = Inf, fastme_it = Inf, inittree = false, lifted_tri = false, weak_bun = false, contraction = true, adaptive = false, repair_iterate = 1, exact = false, relax = true)
 
 gfm = fastme_local_search(path, tree_path, inittree = false)
 gmh = ubtgraph_from_nwk(tree_path*"_1")

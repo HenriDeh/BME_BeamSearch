@@ -42,5 +42,5 @@ for n in 2 .^ [5:11;]
             println(f,"")    
         end
     end
-    BalancedMinimumEvolution.phylip_converter(datapath)
+    BalancedMinimumEvolution.to_phylip(datapath)
 end

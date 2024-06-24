@@ -10,7 +10,7 @@ function expand_float_string(s)
     end
 end
 
-function phylip_converter(path::String)
+function to_phylip(path::String)
     rl = readlines(path)
     open(path, "w") do file
         counter = 0

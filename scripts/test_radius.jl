@@ -4,7 +4,7 @@ using BenchmarkTools
 using JuMP, Combinatorics, LinearAlgebra, Graphs
 
 datasets = ["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"]
-dataset = datasets[3]
+dataset = datasets[5]
 path = joinpath("data", dataset, dataset*".txt")
 tree_path = path*"_tree.nwk"
 D = read_distance_matrix(path);
@@ -23,8 +23,8 @@ begin
     τ = similar(D_);
 
     while degree(g, c) > 3
-        model = BME.lp_exact_x_tau(g, D_ ,c, relax = true)
-        #model = BME.lp_relaxation_x_tau(g, D_ ,c, relax = true)
+        model = BME.MIP_complete(g, D_ ,c, relax = true)
+        #model = BME.MIP_reduced(g, D_ ,c, relax = true)
         set_silent(model)
         optimize!(model) 
         for ((i,j), dist) in value.(model[:τ]).data 
@@ -44,7 +44,7 @@ c = n+1
 for i in 1:c-1
     add_edge!(g2, i, c)
 end
-model = BME.lp_exact_x_tau(g2, D_ ,c, relax = true)
+model = BME.MIP_complete(g2, D_ ,c, relax = true)
 optimize!(model) 
 τ_tilde = similar(D)
 for ((i,j), dist) in value.(model[:τ]).data 

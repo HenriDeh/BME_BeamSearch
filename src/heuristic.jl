@@ -1,5 +1,5 @@
 using ProgressMeter
-export tree_length, kLPNJ, iterated_kLPNJ, hybrid_matheuristic
+export tree_length, kLPNJ, LP_heuristic, LNS_matheuristic
 
 function tree_length(plm::Matrix, D)
     sum(D[i,j]*2.0^-plm[i,j] for (i,j) in combinations(1:size(D,1),2), init = 0.)*2
@@ -13,16 +13,16 @@ function contraction_select(g, c, τ)
     i, j = argmin(tup -> getindex(τ, tup...), combinations(neighbors(g,c),2))
 end
 
-function iterated_kLPNJ(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, relax = true, exact = false)
+function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, relax = true, exact = false)
     g = copy(_g)
     if exact && !relax
         iterate = nv(g)
     end
     while degree(g, c) > 3
         if exact
-            model = lp_exact_x_tau(g, D, c, relax = relax)
+            model = MIP_complete(g, D, c, relax = relax)
         else
-            model = lp_relaxation_x_tau(g, D, c, relax = relax)
+            model = MIP_reduced(g, D, c, relax = relax)
         end
         set_silent(model)
         optimize!(model) 
@@ -40,7 +40,7 @@ function iterated_kLPNJ(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, re
     return g
 end
 
-function hybrid_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, fastme_it = Inf, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, exact = false, nj_repair = false, check_radius = false)
+function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, fastme_it = Inf, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, exact = false, nj_repair = false, check_radius = false)
     time_lim = time() + max_time
     prog = ProgressUnknown()
     D = read_distance_matrix(path)
@@ -71,8 +71,8 @@ function hybrid_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, 
         τmh = similar(D_);
         tau_tilde = similar(D)
         while degree(gmh, c) > 3
-            #model = lp_exact_x_tau(gmh, D_, c, relax = true)
-            model = lp_relaxation_x_tau(gmh, D_, c, relax = true)
+            #model = MIP_complete(gmh, D_, c, relax = true)
+            model = MIP_reduced(gmh, D_, c, relax = true)
             set_silent(model)
             optimize!(model) 
             for ((i,j), dist) in value.(model[:τ]).data 
@@ -121,7 +121,7 @@ function hybrid_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, 
         it += 1
         next!(prog)
         g_collasped, D_collasped, star_center, node_map = collaspe_to_inner_star(current_ubt, K, D, neighborhood = neighborhood)
-        new_ubt = iterated_kLPNJ(g_collasped, D_collasped, star_center, τ, nj_criterion=nj_criterion, iterate = repair_iterate, relax = relax, exact = exact)
+        new_ubt = LP_heuristic(g_collasped, D_collasped, star_center, τ, nj_criterion=nj_criterion, iterate = repair_iterate, relax = relax, exact = exact)
         PLM_new = path_length_matrix(new_ubt)
         val = tree_length(PLM_new, D)
         if val < best_val

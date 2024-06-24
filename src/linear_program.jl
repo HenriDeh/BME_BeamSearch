@@ -1,7 +1,7 @@
 using JuMP, Combinatorics
-export lp_relaxation_x_tau, weak_buneman_oracle
+export MIP_reduced, weak_buneman_oracle
 
-function lp_exact_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
+function MIP_complete(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
     n = degree(g,c)
     TAXA = sort(collect(neighbors(g,c)))
     taxon1 = first(TAXA)
@@ -43,7 +43,7 @@ function lp_exact_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix 
 end
 
 
-function lp_relaxation_x_tau(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
+function MIP_reduced(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
     n = degree(g,c)
     TAXA = sort(collect(neighbors(g,c)))
     LENGTHS = 2:n-1

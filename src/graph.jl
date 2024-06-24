@@ -5,10 +5,11 @@ import DataStructures.Stack
 
 export make_graph, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star
 
-function find_cherry(D::Dict)
-    for i in keys(D)
-        for j in keys(D[i])
-            D[i][j] == 2 && return (i,j)
+function find_cherry(D::Matrix, neighbors)
+    for i in neighbors
+        for j in neighbors
+            i < j || continue
+            D[i,j] == 2 && return (i,j)
         end
     end
     return nothing
@@ -23,25 +24,32 @@ Instantiate the graph object of the UBT represented by the path-length matrix Ta
 function make_graph(Tau::Matrix)
     n = size(Tau,1)
     g = Graph(n+1)
+    c = n+1
     for i in 1:n 
-        add_edge!(g, i, n+1)
+        add_edge!(g, i, c)
     end
-    distances = Dict(i => Dict(j => Tau[i,j] for j in 1:n) for i in 1:n)
-    for v in n+2:(2n-2)
-        (i,j) = find_cherry(distances)
+    _Tau = extend_distance(Tau)
+    while degree(g, c) > 3
+        (i,j) = find_cherry(_Tau, neighbors(g,c))
         add_vertex!(g)
-        rem_edge!(g, n+1, i)
-        rem_edge!(g, n+1, j)
+        v = nv(g)
+        rem_edge!(g, c, i)
+        rem_edge!(g, c, j)
         add_edge!(g, v, i)
         add_edge!(g, v, j)
-        add_edge!(g, v, n+1)
-        distances[v] = Dict(k => d-1 for (k,d) in distances[i])
-        pop!(distances, i)
-        pop!(distances, j)
-        for k in keys(distances)
-            distances[k][v] = distances[k][i] - 1 
-            pop!(distances[k], i)
-            pop!(distances[k], j)
+        add_edge!(g, v, c)
+        for k in neighbors(g,c)
+            if k == v
+                _Tau[v,v] = 0.
+            else
+                if (i,k,j) == (3,2,4)
+                    @show _Tau[i,k] 
+                    @show _Tau[j, k]
+                    @assert _Tau[i,k] == _Tau[j, k] == _Tau[k,i] == _Tau[k,j]
+                end
+                _Tau[v,k] = _Tau[i,k] - 1
+                _Tau[k,v] = _Tau[v,k]
+            end
         end
     end
     return g

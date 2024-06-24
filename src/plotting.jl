@@ -4,7 +4,7 @@ GLMakie.activate!(inline=false)
 
 function plot_ubt(g; center = nothing, subleaves = [], kwargs...)
     nleaves = (nv(g)+2)÷2
-    labels = [string.(1:nleaves); fill("", nleaves-2)]
+    labels = string.(1:nv(g)) #[string.(1:nleaves); fill("", nleaves-2)]
     if center isa Int
         subleavesset = Set(subleaves)
         if !isempty(subleavesset)
@@ -21,7 +21,7 @@ function plot_ubt(g; center = nothing, subleaves = [], kwargs...)
         colors = [fill(colorant"lightgreen", nleaves); fill(colorant"lightgrey", nleaves-2)] 
     end
     f = Figure(size = (1000,1000))
-    ax = Axis(f[1,1], title = kwargs[:title])
+    ax = Axis(f[1,1], title = get(kwargs, :title, ""))
     p = graphplot!(ax, g, ilabels = labels, node_size = fill(20, nv(g)), node_color = colors, kwargs...)
     deregister_interaction!(ax, :rectanglezoom)
     register_interaction!(ax, :nodedrag, NodeDrag(p))

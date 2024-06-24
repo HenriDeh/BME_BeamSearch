@@ -14,6 +14,14 @@ function phylip_converter(path::String)
     rl = readlines(path)
     open(path, "w") do file
         counter = 0
+        n = try 
+            n = parse(Int, first(rl))
+            @assert n == length(rl) - 1
+            n
+        catch e
+            length(rl)
+        end
+        println(file, n)
         for (i,ln) in enumerate(rl)
             if ln == ""
                 counter = 0
@@ -23,15 +31,19 @@ function phylip_converter(path::String)
                 counter += 1
                 continue
             else
-                if !startswith(ln, string(counter))
-                    rl[i] = "$counter "*join(map(expand_float_string, split(ln, ' ')), " ")
+                splits = split(ln, ' ')
+                if !startswith(ln, string(counter)) || length(splits) > n
+                    if length(splits) > n
+                        splits = splits[(1 + length(splits) - n):end]
+                    end
+                    rl[i] = "$counter "*join(map(expand_float_string, splits), " ")
                 else
-                    rl[i] = join(map(expand_float_string, split(ln, ' ')), " ")
+                    rl[i] = join(map(expand_float_string, splits), " ")
                 end
                 counter += 1
             end
         end
-        for line in rl
+        for line in rl[2:end]
             println(file, line)
         end
     end

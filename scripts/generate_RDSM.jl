@@ -1,23 +1,32 @@
 import Random.randperm
 include("../src/phylip_convert.jl")
-function randomDoublyStochasticMatrix(n, num_perm = n^2)
-    M = zeros(n,n)
-    α = rand(num_perm)
-    α = α / sum(α)
 
-    for i=1:num_perm
-        perm = randperm(n)
-        for j=1:n
-            M[perm[j],j] += α[i]
+function generate_symmetric_doubly_stochastic(n; tol=1e-9, max_iter=1000)
+    A = rand(n, n)
+    A = (A + A') / 2
+    for i in 1:n
+        A[i, i] = 0
+    end
+    # Normalize the matrix to be doubly stochastic using Sinkhorn-Knopp algorithm
+    for _ in 1:max_iter
+        row_sums = sum(A, dims=2)
+        A = A ./ row_sums 
+        A = (A + A') / 2
+
+        col_sums = sum(A, dims=1)
+        A = A ./ col_sums
+        A = (A + A') / 2
+        # Check for convergence
+        if all(abs.(row_sums .- 1) .< tol) && all(abs.(col_sums .- 1) .< tol)
+            break
         end
     end
 
-    return M
+    return A
 end
 
 for n in 2 .^ [5:11;]
-    D = randomDoublyStochasticMatrix(n, Int(ceil(n*log(n))))
-    D = (D .+ D')./2
+    D = generate_symmetric_doubly_stochastic(n)
     dirpath=joinpath("data", "RDSM$(n)")
     if !isdir(dirpath)
         mkdir(dirpath)
@@ -33,5 +42,5 @@ for n in 2 .^ [5:11;]
             println(f,"")    
         end
     end
-    phylip_converter(datapath)
+    BalancedMinimumEvolution.phylip_converter(datapath)
 end

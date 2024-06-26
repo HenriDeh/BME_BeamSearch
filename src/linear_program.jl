@@ -1,7 +1,7 @@
 using JuMP, Combinatorics
 export MIP_reduced, weak_buneman_oracle
 
-function MIP_complete(g, D::Matrix, c; relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
+function MIP_complete(g, D::Matrix, c; relax = true, semi_relax = false) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
     n = degree(g,c)
     TAXA = sort(collect(neighbors(g,c)))
     taxon1 = first(TAXA)
@@ -9,7 +9,11 @@ function MIP_complete(g, D::Matrix, c; relax = true) # D is a distance matrix (2
     LENGTHS = 2:n-1
     model = Model(OPTIMIZER, add_bridges = false)
     set_string_names_on_creation(model, false)
-    @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin)
+    if semi_relax
+        @variable(model, 0<=_x[i=TAXA, j=TAXA, l=LENGTHS; i<j]<=1)
+    else
+        @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin)
+    end
     @variable(model, _y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p < q], Bin)
     
     @expression(model, y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q], _y[j, minmax(p,q)...])

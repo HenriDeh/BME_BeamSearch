@@ -3,7 +3,7 @@ using Combinatorics, InvertedIndices, OffsetArrays, StatsBase
 import DataStructures.Stack
 @reexport using Graphs
 
-export make_graph, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star
+export make_graph, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph
 
 function find_cherry(D::Matrix, neighbors)
     for i in neighbors
@@ -13,6 +13,16 @@ function find_cherry(D::Matrix, neighbors)
         end
     end
     return nothing
+end
+
+function star_graph(D)
+    n = size(D,1)
+    g = Graph(n+1)
+    c = n+1
+    for i in 1:c-1
+        add_edge!(g, i, c)
+    end
+    return g, c
 end
 
 """
@@ -96,7 +106,7 @@ function collaspe_to_inner_star(_g, K, D::Matrix; neighborhood) #D is the distan
     g = copy(_g)
     selected, leaves, candidates = neighborhood(g, K)
     nodes = union(selected, leaves, candidates)
-    subtree_depths = Dict{Int, Dict{Int,Int}}() #std[i] is a dictionary with all nodes of the substree rooted in i and their associated depths in this subtree.
+    subtree_depths = Dict{Int, Dict{Int,Int}}() #std[i] is a dictionary with all nodes of the subtree rooted in i and their associated depths in this subtree.
     for ca in candidates
         subtree_depths[ca] = find_subtree_depths(ca, g, nodes)
     end
@@ -143,6 +153,7 @@ function find_subtree_depths(c, g, subtree_nodes)
     return leaves_depths
 end
 
+#leavesX contains the depth of each leave of the subtree X
 function average_dist(D::Matrix, leavesA, leavesB)
     @inbounds sum(D[l,m]*2.0^-(leavesA[l]+leavesB[m]) for (l,m) in Iterators.product(keys(leavesA), keys(leavesB)))
 end

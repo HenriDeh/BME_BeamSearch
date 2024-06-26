@@ -85,7 +85,7 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
             end
             (i,j) = !nj_criterion ? contraction_select(gmh,c,τmh) : nj_select(gmh,c,τmh)
             v = join_neighbors!(gmh, c, i, j)
-            update_distances!(D_, gmh, c, v, i, j, method = nj_criterion ? :nj : :average)
+            update_distances!(D_, gmh, c, v, i, j, method = :nj)
             update_distances!(τmh, gmh, c, v, i, j, method = nj_criterion ? :nj : :contraction)
         end
         lb = tree_length(tau_tilde, D)

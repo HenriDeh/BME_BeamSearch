@@ -26,5 +26,6 @@ docs/site/
 *.png
 *.zip
 *.nwk*
-
+*.dat 
+*fastme_stat*
 neighborhood_samplers.jl

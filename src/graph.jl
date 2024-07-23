@@ -105,14 +105,6 @@ end
 function collaspe_to_inner_star(_g, K, D::Matrix; neighborhood) #D is the distance matrix of the leaves, K is number of star branches
     g = copy(_g)
     selected, leaves, candidates = neighborhood(g, K)
-    nodes = union(selected, leaves, candidates)
-    subtree_depths = Dict{Int, Dict{Int,Int}}() #std[i] is a dictionary with all nodes of the subtree rooted in i and their associated depths in this subtree.
-    for ca in candidates
-        subtree_depths[ca] = find_subtree_depths(ca, g, nodes)
-    end
-    for l in leaves
-        subtree_depths[l] = Dict(l => 0)
-    end
     ## make star
     add_vertex!(g) #center of the star
     c = nv(g)
@@ -121,11 +113,37 @@ function collaspe_to_inner_star(_g, K, D::Matrix; neighborhood) #D is the distan
     end
     node_map = rem_vertices!(g, collect(selected)) #remove inner nodes of subgraph
     c = findfirst(==(c), node_map)
-    update_weights!(neighborhood, node_map)
     D2 = extend_distance(D)
-    for (i,j) in combinations(neighbors(g,c),2)
-        D2[i,j] = average_dist(D, subtree_depths[node_map[i]], subtree_depths[node_map[j]])
-        D2[j,i] = D2[i,j]
+    parents = Stack{Pair{Tuple{Int,Int},Int}}()
+    visited = Set{Int}(vcat([c], neighbors(g,c)))
+    remaining = Set{Int}() # set of nodes that have not yet been contracted. 
+    for v in BFSIterator(g, c) # recursively obtain childs-parent, starting from c to search outwards towards the leaves of the UBT
+        v == c && continue
+        if degree(g, v) == 1
+            push!(remaining, v)
+            continue
+        end
+        c1, c2 = [n for n in neighbors(g,v) if n ∉ visited] #avoid backtracking
+        push!(visited, c1)
+        push!(visited, c2)
+        push!(parents, (c1, c2) => v)
+    end
+    while !isempty(parents)
+        (c1, c2), p = pop!(parents)
+        try
+            pop!(remaining, c1)
+            pop!(remaining, c2)
+        catch e
+            println.(edges(g))
+            println(c1," ", c2," ", p)
+            println(neighbors(g,c))
+            rethrow(e)
+        end
+        for v in remaining
+            D2[p, v] = (D2[c1, v] + D2[c2, v] - D2[c1,c2])/2 #contraction of c1 and c2 into their parent.
+            D2[v, p] = D2[p, v]
+        end
+        push!(remaining, p)
     end
     return g, D2, c, node_map
 end

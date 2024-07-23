@@ -3,27 +3,30 @@ import BalancedMinimumEvolution as BME
 using Graphs, JuMP
 
 datasets = ["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"]
-dataset = datasets[3]
+dataset = datasets[1]
 path = joinpath("data", dataset, dataset*".txt")
 tree_path = path*"_tree.nwk"
 D = read_distance_matrix(path);
 n = only(unique(size(D)))
 
 gfm = fastme_local_search(path, tree_path, inittree = false)
-@show tlfastme = tree_length(path_length_matrix(gfm), D)
+plmfm = path_length_matrix(gfm)
+@show tlfastme = tree_length(plmfm, D)
 
-n = size(D,1)
-g = Graph(n+1)
-c = n+1
-for i in 1:c-1
-    add_edge!(g, i, c)
-end
+g, c = star_graph(D)
 
 D_ = BME.extend_distance(D);
 τ = similar(D_);
 
 model = BME.MIP_complete(g, D_ ,c, relax = false)
-set_attribute(model, "TimeLimit", 7200)
+set_attribute(model, "TimeLimit", 3600)
+# for i in 1:n
+#     for j in (i+1):n
+#         set_start_value(model[:_x][i,j,plmfm[i,j]], 1)
+#     end
+# end
+
+# set_attribute(model, MOI.NumberOfThreads(), Threads.nthreads())
 optimize!(model) 
 
 for ((i,j), dist) in value.(model[:τ]).data 

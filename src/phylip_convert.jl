@@ -12,11 +12,14 @@ end
 
 function to_phylip(path::String)
     rl = readlines(path)
-    open(path, "w") do file
+    file = open(path, "w") #do file
+    try 
         counter = 0
+        header = false
         n = try 
             n = parse(Int, first(rl))
             @assert n == length(rl) - 1
+            header = true
             n
         catch e
             length(rl)
@@ -29,23 +32,26 @@ function to_phylip(path::String)
             end
             if counter == 0
                 counter += 1
-                continue
-            else
-                splits = split(ln, ' ')
-                filter!(!=(""), splits)
-                if !startswith(ln, string(counter)) || length(splits) > n
-                    if length(splits) > n
-                        splits = splits[(1 + length(splits) - n):end]
-                    end
-                    rl[i] = "$counter "*join(map(expand_float_string, splits), " ")
-                else
-                    rl[i] = join(map(expand_float_string, splits), " ")
+                if header
+                    continue
                 end
-                counter += 1
             end
+            splits = split(ln, ' ')
+            filter!(!=(""), splits)
+            if !startswith(ln, string(counter)) || length(splits) > n
+                if length(splits) > n
+                    splits = splits[(1 + length(splits) - n):end]
+                end
+                rl[i] = "$counter "*join(map(expand_float_string, splits), " ")
+            else
+                rl[i] = join(map(expand_float_string, splits), " ")
+            end
+            counter += 1
         end
         for line in rl[end-n+1:end]
             println(file, line)
         end
+    finally
+        close(file)
     end
 end

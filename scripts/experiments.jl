@@ -12,7 +12,7 @@ datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", 
 
 # LNS Matheuristic
 begin
-    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r))*"_$i", exact = e, nj_criterion = r, trial=i) for (e,r,i) in Iterators.product((true, false),(true, false),1:10)]
+    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r))*"_$i", exact = e, nj_criterion = r, trial=i) for (e,r,i) in Iterators.product((true, false),(true, false),1:5)]
     if !isfile("data/LNS_results.csv") 
         df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], exact = [], nj = [], time = [], tree_path = [], diameter_fastme=[],diameter_heuristic=[],pair_changed =[], proportion = [], extrema=[],avg_change=[],trial=[])
         CSV.write("data/LNS_results.csv", df)

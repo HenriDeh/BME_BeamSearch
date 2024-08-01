@@ -29,7 +29,7 @@ function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, rela
             degree(g, c) > 3 || break
             (i,j) = !nj_criterion ? contraction_select(g,c,τ) : nj_select(g,c,τ)
             v = join_neighbors!(g, c, i, j)
-            update_distances!(D, g, c, v, i, j, method = nj_criterion ? :nj : :average)
+            update_distances!(D, g, c, v, i, j, method = :average) # :average is always optimal
             update_distances!(τ, g, c, v, i, j, method = nj_criterion ? :nj : :contraction)
         end
     end

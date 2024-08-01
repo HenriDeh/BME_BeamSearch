@@ -7,7 +7,9 @@ fastme_help() = run(`$(fastme()) -h`)
 
 function ubtgraph_from_nwk(path::String)
     t = open(path) do f
-        l = replace(readline(f), r":-?\d+\.\d+," => ",", r":-?\d+\.\d+\)" => ")")
+        ln = readline(f)
+        l = replace(ln, r":-?\d+\.\d+," => ",", r":-?\d+\.\d+\)" => ")")
+        #l = replace(l, r"\) [^:]*\[[^:]*:" => ") :") # remove branch lengths, remove buggy encoding node names
         parsenewick(l)
     end
     ubtgraph_from_nwk(t)
@@ -37,12 +39,28 @@ end
 function fastme_local_search(path::String, tree_path::String; inittree = false)
     if inittree
         run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -u $tree_path`, stdout=devnull))
+        mv("tmp.nwk", tree_path, force = true)
     else
-        run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -m B`, stdout=devnull))
+        D = read_distance_matrix(path)
+        best = Inf
+        for method in ["b","o","i"]
+            run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -m $method`, stdout=devnull))
+            try
+                g = ubtgraph_from_nwk("tmp.nwk")
+                tl = tree_length(path_length_matrix(g), D)
+                println("FastME init method $method yielded tree length $tl")
+                if tl < best
+                    best = tl
+                    mv("tmp.nwk", tree_path, force = true)
+                end
+            catch e #some -b methods of FastME may yield incorrect newicks
+                println("Method $method errored")
+                #throw(e)
+                continue
+            end
+        end
     end
-    mv("tmp.nwk", tree_path, force = true)
-    g = ubtgraph_from_nwk(tree_path)
-    return g
+    return ubtgraph_from_nwk(tree_path)
 end
 
 function read_distance_matrix(path::String)

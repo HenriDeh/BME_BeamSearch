@@ -8,26 +8,26 @@ import BalancedMinimumEvolution as BME
 using CSV, DataFrames, Statistics, JuMP, Combinatorics
 import Random
 
-datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_F84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_F84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_84", "300_zilla_K2P", "300_zilla_JC69"]; ["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
+datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_F84", "100_rdpii_K2P", "100_rdpii_JC69","200_rdpii_F81", "200_rdpii_F84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_F84", "300_zilla_K2P", "300_zilla_JC69"]; ["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
 
 # LNS Matheuristic
 begin
-    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r))*"_$i", exact = e, nj_criterion = r, trial=i) for (e,r,i) in Iterators.product((true, false),(true, false),1:5)]
+    experiments = [(id = (nj ? "LPNJ" : "LPC") * (co ? "-co" : "-re")*"_$i", complete = co, nj_criterion = nj, trial=i) for (co,nj,i) in Iterators.product((false, true),(false,true),1:5)]
     if !isfile("data/LNS_results.csv") 
-        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], exact = [], nj = [], time = [], tree_path = [], diameter_fastme=[],diameter_heuristic=[],pair_changed =[], proportion = [], extrema=[],avg_change=[],trial=[])
+        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], complete = [], nj = [], time = [], tree_path = [], diameter_fastme=[],diameter_heuristic=[],pair_changed =[], proportion = [], extrema=[],avg_change=[],trial=[])
         CSV.write("data/LNS_results.csv", df)
     end
     global counter = 0
     df = CSV.read("data/LNS_results.csv", DataFrame)
-    for dataset in datasets
-        for experiment in experiments
+    for experiment in experiments
+        for dataset in datasets
             Random.seed!(counter)
             global counter += 1
             if nrow(df) >= counter 
                 continue #checkpointing
             end
             experiment_id = experiment.id
-            exact = experiment.exact
+            complete = experiment.complete
             nj_criterion = experiment.nj_criterion
             println("-"^90)
             println(dataset)
@@ -40,9 +40,9 @@ begin
             tree_path = joinpath(exp_path, "tree.nwk")
             D = read_distance_matrix(path);
             n = only(unique(size(D)))
-            K = min(exact ? 20 : 30, n-n%5)
+            K = min(complete ? 20 : 40, n-n%5)
             time = n < 20 ? 3 : n > 75 ? 60 : 15
-            new_tree_path = LNS_matheuristic(path, K, tree_path, max_time = time*60, max_it = Inf, fastme_it = Inf, inittree = false, nj_criterion = nj_criterion, repair_iterate = 1, exact = exact, relax = true, )
+            new_tree_path = LNS_matheuristic(path, K, tree_path, max_time = time*60, max_it = Inf, inittree = false, nj_criterion = nj_criterion, complete = complete)
             ## Tree differences
             gfm = ubtgraph_from_nwk(tree_path)
             gmh = ubtgraph_from_nwk(new_tree_path)
@@ -57,7 +57,7 @@ begin
             @show avg = mean([d for d in diffplm if d != 0]) #average distance change 
             @show prop = changes/length(combinations(1:n,2)) #proportion of pairs with a new tau
             @show ext=extrema(diffplm)
-            push!(df,(dataset=dataset, fastme = tlfm, heuristic = tlmh, gap = tlmh/tlfm-1, exact = exact, nj = nj_criterion, time = time, tree_path = new_tree_path, diameter_fastme=diafm,diameter_heuristic=diamh,pair_changed =changes, proportion = prop, extrema=ext,avg_change=avg,trial=experiment.trial), promote = true)
+            push!(df,(dataset=dataset, fastme = tlfm, heuristic = tlmh, gap = tlmh/tlfm-1, complete = complete, nj = nj_criterion, time = time, tree_path = new_tree_path, diameter_fastme=diafm,diameter_heuristic=diamh,pair_changed =changes, proportion = prop, extrema=ext,avg_change=avg,trial=experiment.trial), promote = true)
             CSV.write("data/LNS_results.csv", df)
         end
     end
@@ -66,9 +66,9 @@ end
 # Matheuristic vs neighborhood joining 
 datasets = ["01-Primates12", "02-M17", "03-M18", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "RDSM32", "RDSM64"]
 begin
-    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r)) , exact = e, nj_criterion = r) for (e,r) in Iterators.product((true, false),(true, false))]
+    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r)) , complete = e, nj_criterion = r) for (e,r) in Iterators.product((true, false),(true, false))]
     if !isfile("data/repair_results.csv") 
-        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], nj = [], exact = [], nj_criterion = [], time = [], radius_exact = [], radius_relaxation= [],lp_gap=[])
+        df = DataFrame(dataset=[], fastme = [], heuristic = [], gap = [], nj = [], complete = [], nj_criterion = [], time = [], radius_complete = [], radius_relaxation= [],lp_gap=[])
         CSV.write("data/repair_results.csv", df)
     end
     global counter = 0
@@ -80,7 +80,7 @@ begin
                 continue #checkpointing
             end
             experiment_id = experiment.id
-            exact = experiment.exact
+            complete = experiment.complete
             nj_criterion = experiment.nj_criterion
             println("-"^90)
             println(dataset)
@@ -101,7 +101,7 @@ begin
             end
             D_ = BME.extend_distance(D);
 
-            rtime = @elapsed gmh = BME.LP_heuristic(g, D_, c, exact = exact, nj_criterion = nj_criterion)
+            rtime = @elapsed gmh = BME.LP_heuristic(g, D_, c, complete = complete, nj_criterion = nj_criterion)
             tl = BME.tree_length(path_length_matrix(gmh), D)
 
             gfm = ubtgraph_from_nwk(tree_path)
@@ -118,7 +118,7 @@ begin
                 τ_tilde[i,i] = 0.
                 τ_tilde[j,j] = 0.
             end
-            radius_exact = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
+            radius_complete = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
             
             model = BME.MIP_reduced(g, D_, c; relax = true)
             optimize!(model)
@@ -130,7 +130,7 @@ begin
             radius_relaxation = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
             lp_gap = tl/tree_length(τ_tilde, D)-1
 
-            push!(df,(dataset=dataset, fastme = tlfastme, heuristic = tl, gap = tl/tlfastme-1, nj = tlnj, exact = exact, nj_criterion = nj_criterion, time = rtime, radius_exact=radius_exact, radius_relaxation=radius_relaxation, lp_gap = lp_gap), promote = true)
+            push!(df,(dataset=dataset, fastme = tlfastme, heuristic = tl, gap = tl/tlfastme-1, nj = tlnj, complete = complete, nj_criterion = nj_criterion, time = rtime, radius_complete=radius_complete, radius_relaxation=radius_relaxation, lp_gap = lp_gap), promote = true)
             CSV.write("data/repair_results.csv",df)            
         end
     end

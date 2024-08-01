@@ -102,9 +102,11 @@ function random_subtree(g, K)
     return induced_subgraph(g, collect(union(selected, leaves, candidates)))
 end
 
-function collaspe_to_inner_star(_g, K, D::Matrix; neighborhood) #D is the distance matrix of the leaves, K is number of star branches
+function collaspe_to_inner_star(_g, subtree, D::Matrix) #D is the distance matrix of the leaves, K is number of star branches
     g = copy(_g)
-    selected, leaves, candidates = neighborhood(g, K)
+    selected = subtree.inner_nodes
+    leaves = subtree.taxa_leaves
+    candidates = subtree.prune_leaves
     ## make star
     add_vertex!(g) #center of the star
     c = nv(g)
@@ -140,7 +142,8 @@ function collaspe_to_inner_star(_g, K, D::Matrix; neighborhood) #D is the distan
             rethrow(e)
         end
         for v in remaining
-            D2[p, v] = (D2[c1, v] + D2[c2, v] - D2[c1,c2])/2 #contraction of c1 and c2 into their parent.
+            D2[p, v] = (D2[c1, v] + D2[c2, v])/2# - D2[c1,c2])/2 #contraction of c1 and c2 into their parent.
+            # D2[p, v] = (D2[c1, v] + D2[c2, v] - D2[c1,c2])/2 #NJ variant. Unused as the above is known to be optimal.
             D2[v, p] = D2[p, v]
         end
         push!(remaining, p)
@@ -236,4 +239,20 @@ function path_length_matrix(ubt::Graph)
         end
     end
     return τ
+end
+
+function sample_neighborhood(g, K; K_leaves = false) 
+    start = rand(inner_nodes(g))
+    selected = Set([start])
+    leaves = Set(filter(n->degree(g,n) == 1, neighbors(g,start)))
+    candidates = Set{Int}(filter(n->degree(g,n) == 3, neighbors(g,start)))
+    while (K_leaves && length(leaves) < K) || length(selected) < K-2
+        new_node = rand(candidates)
+        push!(selected, new_node)
+        pop!(candidates, new_node)
+        union!(candidates, setdiff(filter(n->degree(g,n) == 3, neighbors(g,new_node)), selected)) #add its neighbors in candidates if they have degree 3
+        union!(leaves, filter(n->degree(g,n) == 1, neighbors(g,new_node)))  #neighbors with degree 1 are leaves of g
+    end
+    subtree = (inner_nodes = selected, taxa_leaves = leaves, prune_leaves = candidates) # inner_nodes are the inner nodes of the ST, taxa_leaves are leaves of g and of ST, prune_leaves are leaves of ST but not of g 
+    return subtree
 end

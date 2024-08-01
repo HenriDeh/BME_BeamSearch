@@ -18,8 +18,8 @@ begin
     τ = similar(D_);
 
     while degree(g, c) > 3
-        model = BME.MIP_complete(g, D_ ,c, relax = false)
-        #model = BME.MIP_reduced(g, D_ ,c, relax = true)
+        model = BME.BMEP_MILP(g, D_ ,c, relax = false)
+        #model = BME.BMEP_MILP(g, D_ ,c, relax = true, complete = false)
         #set_silent(model)
         set_optimizer_attribute(model, "TimeLimit", 3600)
         optimize!(model) 
@@ -41,7 +41,7 @@ c = n+1
 for i in 1:c-1
     add_edge!(g2, i, c)
 end
-model = BME.MIP_complete(g2, D_ ,c, relax = true)
+model = BME.BMEP_MILP(g2, D_ ,c, relax = true)
 optimize!(model) 
 τ_tilde = similar(D)
 for ((i,j), dist) in value.(model[:τ]).data 

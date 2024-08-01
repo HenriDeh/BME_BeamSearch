@@ -110,7 +110,7 @@ begin
             gnj = neighbor_joining(D)
             tlnj = tree_length(path_length_matrix(gnj), D)
 
-            model = BME.MIP_complete(g, D_, c; relax = true)
+            model = BME.BMEP_MILP(g, D_, c; relax = true)
             optimize!(model)
             τ_tilde = similar(D)
             for ((i,j), dist) in value.(model[:τ]).data 
@@ -120,7 +120,7 @@ begin
             end
             radius_complete = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
             
-            model = BME.MIP_reduced(g, D_, c; relax = true)
+            model = BME.BMEP_MILP(g, D_, c; relax = true, complete = false)
             optimize!(model)
             for ((i,j), dist) in value.(model[:τ]).data 
                 τ_tilde[i,j] = dist

@@ -18,7 +18,7 @@ g, c = star_graph(D)
 D_ = BME.extend_distance(D);
 τ = similar(D_);
 
-model = BME.MIP_complete(g, D_ ,c, relax = false)
+model = BME.BMEP_MILP(g, D_ ,c, relax = false)
 set_attribute(model, "TimeLimit", 3600)
 # for i in 1:n
 #     for j in (i+1):n

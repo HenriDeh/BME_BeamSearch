@@ -19,11 +19,7 @@ function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, rela
         iterate = nv(g)
     end
     while degree(g, c) > 3
-        if complete
-            model = MIP_complete(g, D, c, relax = relax)
-        else
-            model = MIP_reduced(g, D, c, relax = relax)
-        end
+        model = BMEP_MILP(g, D, c, relax = relax, complete = complete)
         set_silent(model)
         optimize!(model) 
         for ((i,j), dist) in value.(model[:τ]).data 

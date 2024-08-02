@@ -36,9 +36,9 @@ function neighbor_joining!(D,g,c) # D is a distance matrix (2n-2 x 2n-2), g is a
     return g
 end
 
-function NJ_criterion(D, g, c, pair) #Q criterion p. 16 Catanzaro et al. 2020
+function NJ_criterion(D, candidates, pair) #Q criterion p. 16 Catanzaro et al. 2020
     i,j = pair
-    (degree(g,c))*distance(D,i,j) - sum(distance(D,i,k)+distance(D,k,j) for k in neighbors(g,c) if k ∉ (i,j))
+    (length(candidates))*distance(D,i,j) - sum(distance(D,i,k)+distance(D,k,j) for k in candidates if k ∉ (i,j))
 end
 
 function join_neighbors!(g, c, i, j)

@@ -5,20 +5,24 @@ function tree_length(plm::Matrix, D)
     sum(D[i,j]*2.0^-plm[i,j] for (i,j) in combinations(1:size(D,1),2), init = 0.)*2
 end
 
-function nj_select(g, c, τ)
-    i, j = first(sort(map(npair -> (NJ_criterion(τ,g,c,npair), npair), combinations(neighbors(g, c),2)), by = first))[2]
+function nj_select(candidates, τ)
+    i, j = first(sort(map(npair -> (NJ_criterion(τ,candidates,npair), npair), combinations(candidates,2)), by = first))[2]
 end
 
-function contraction_select(g, c, τ)
-    i, j = argmin(tup -> getindex(τ, tup...), combinations(neighbors(g,c),2))
+function contraction_select(candidates, τ)
+    i, j = argmin(tup -> getindex(τ, tup...), combinations(candidates,2))
 end
 
-function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, relax = true, complete = false)
+function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, relax = true, complete = false, fastme_postproc = false)
     g = copy(_g)
     if complete && !relax
         iterate = nv(g)
     end
+    sububtnodes = sort(neighbors(_g, c))
+    K = length(sububtnodes)
+    push!(sububtnodes, c)
     while degree(g, c) > 3
+        star_tips = sort(neighbors(g, c))
         model = BMEP_MILP(g, D, c, relax = relax, complete = complete)
         set_silent(model)
         optimize!(model) 
@@ -27,16 +31,48 @@ function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, rela
         end
         for _ in 1:iterate
             degree(g, c) > 3 || break
-            (i,j) = !nj_criterion ? contraction_select(g,c,τ) : nj_select(g,c,τ)
+            i,j = !nj_criterion ? contraction_select(star_tips,τ) : nj_select(star_tips,τ)
             v = join_neighbors!(g, c, i, j)
             update_distances!(D, g, c, v, i, j, method = :average) # :average is always optimal
-            update_distances!(τ, g, c, v, i, j, method = nj_criterion ? :nj : :contraction)
-        end
+            update_distances!(τ, g, c, v, i, j, method = :contraction)
+            push!(sububtnodes, v)
+        end 
     end
-    return g
+    #FastME post-processing
+    if fastme_postproc
+        g_sub, node_map = induced_subgraph(g, sububtnodes)
+        @assert node_map == sububtnodes
+        τ_check = path_length_matrix(g_sub)
+        D_check = D[node_map[1:K], node_map[1:K]]
+        tl_mh = tree_length(τ_check, D_check)
+        tmp_D = "tmpLP.txt"
+        tmp_tree = "tmpLP.nwk"
+        τ_check_FastME = try 
+            fastme_local_search(D_check, τ_check, tmp_D, tmp_tree) |> path_length_matrix
+        finally
+            rm(tmp_D)
+            rm(tmp_tree)
+            rm(tmp_D*"_fastme_stat.txt")
+        end
+        tl_fm = tree_length(τ_check_FastME, D_check)
+        if tl_fm < tl_mh
+            print("(FastME post-processing) ")
+        end
+        for (i,j) in combinations(1:K,2) # copy to complete τ at correct place
+            τ[node_map[i],node_map[j]] = τ[node_map[j],node_map[i]] = τ_check_FastME[i,j]
+        end
+        while degree(_g,c) > 3
+            i,j = contraction_select(neighbors(_g,c), τ)
+            v = join_neighbors!(_g, c, i, j)
+            update_distances!(τ, _g, c, v, i, j, method = :contraction)
+        end
+        return _g
+    else
+        return g
+    end
 end
 
-function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, complete = false)
+function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, complete = false, fastme_postproc = false)
     time_start = time() 
     time_lim = time_start + max_time
     prog = ProgressUnknown()
@@ -64,7 +100,7 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
         subtree = sample_neighborhood(current_ubt, K)
         g_collasped, D_collasped, star_center, node_map = collaspe_to_inner_star(current_ubt, subtree, D)
 
-        new_ubt = LP_heuristic(g_collasped, D_collasped, star_center, τ, nj_criterion=nj_criterion, iterate = repair_iterate, relax = relax, complete = complete)
+        new_ubt = LP_heuristic(g_collasped, D_collasped, star_center, τ, iterate = repair_iterate; nj_criterion, relax, complete, fastme_postproc)
         PLM_new = path_length_matrix(new_ubt)
         val = tree_length(PLM_new, D)
         if val < best_val

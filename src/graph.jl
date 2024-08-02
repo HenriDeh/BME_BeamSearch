@@ -3,7 +3,7 @@ using Combinatorics, InvertedIndices, OffsetArrays, StatsBase
 import DataStructures.Stack
 @reexport using Graphs
 
-export make_graph, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph
+export UBT_from_PLM, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph
 
 function find_cherry(D::Matrix, neighbors)
     for i in neighbors
@@ -26,21 +26,21 @@ function star_graph(D)
 end
 
 """
-    make_graph(Tau::Matrix)
+    UBT_from_PLM(PLM::Matrix)
 
-Instantiate the graph object of the UBT represented by the path-length matrix Tau.
+Instantiate the graph object of the UBT represented by the path-length matrix PLM.
 
 """
-function make_graph(Tau::Matrix)
-    n = size(Tau,1)
+function UBT_from_PLM(PLM::Matrix)
+    n = size(PLM,1)
     g = Graph(n+1)
     c = n+1
     for i in 1:n 
         add_edge!(g, i, c)
     end
-    _Tau = extend_distance(Tau)
+    _PLM = extend_distance(PLM)
     while degree(g, c) > 3
-        (i,j) = find_cherry(_Tau, neighbors(g,c))
+        (i,j) = find_cherry(_PLM, neighbors(g,c))
         add_vertex!(g)
         v = nv(g)
         rem_edge!(g, c, i)
@@ -50,15 +50,13 @@ function make_graph(Tau::Matrix)
         add_edge!(g, v, c)
         for k in neighbors(g,c)
             if k == v
-                _Tau[v,v] = 0.
+                _PLM[v,v] = 0.
             else
                 if (i,k,j) == (3,2,4)
-                    @show _Tau[i,k] 
-                    @show _Tau[j, k]
-                    @assert _Tau[i,k] == _Tau[j, k] == _Tau[k,i] == _Tau[k,j]
+                    @assert _PLM[i,k] == _PLM[j, k] == _PLM[k,i] == _PLM[k,j]
                 end
-                _Tau[v,k] = _Tau[i,k] - 1
-                _Tau[k,v] = _Tau[v,k]
+                _PLM[v,k] = _PLM[i,k] - 1
+                _PLM[k,v] = _PLM[v,k]
             end
         end
     end
@@ -201,8 +199,14 @@ function create_random_UBT(n)
     return g
 end
 
+function is_ubt(g)
+    c = counter(degree(g))
+    return c[1] == length(leaves(g)) && c[3] == length(inner_nodes(g))
+end
+
 #Catanzaro, D., & Pesenti, R. (2019). Enumerating vertices of the balanced minimum evolution polytope. Computers & Operations Research, 109, 209‑217. https://doi.org/10.1016/j.cor.2019.05.001
 function path_length_matrix(ubt::Graph)
+    @assert is_ubt(ubt) "Graph is not an UBT"
     s = prufer_encode(ubt)
     ir = inner_nodes(ubt)
     k = length(ir)

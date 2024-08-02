@@ -31,15 +31,5 @@ for n in 2 .^ [5:11;]
         mkdir(dirpath)
     end
     datapath = joinpath(dirpath,"RDSM$(n).txt")
-    open(datapath, "w") do f
-        println(f, string(size(D)[1]))
-        for (i,r) in enumerate(eachrow(D))
-            print(f,i," ")
-            for e in r
-                print(f, string(round(e, digits = 10) , " "))
-            end
-            println(f,"")    
-        end
-    end
-    BalancedMinimumEvolution.to_phylip(datapath)
+    D_to_txt(datapath, D)
 end

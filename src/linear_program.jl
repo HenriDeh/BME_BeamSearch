@@ -7,7 +7,7 @@ function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true) # D is a dist
     taxon1 = first(TAXA)
     TAXA2n = TAXA[2:end]
     LENGTHS = 2:n-1
-    model = direct_model(OPTIMIZER)
+    model = Model(OPTIMIZER)
     #set_string_names_on_creation(model, false)
     @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin)
     @expression(model, x[i=TAXA, j=TAXA, l=LENGTHS; i≠j], _x[minmax(i,j)...,l])
@@ -24,8 +24,9 @@ function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true) # D is a dist
             sum(sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for j in TAXA if j ≠ i)  == 0.5
         c_manifold, 
             sum(l*exp2(-l)*x[i,j,l] for i in TAXA, j in TAXA, l in LENGTHS if i≠j) == (2n-3)
-        
-        if complete
+    end
+    if complete
+        @constraints model begin
             c_str_triangular[i=TAXA2n, j=TAXA2n; i ≠ j],
                 τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2
             c_str_triangular2[i=TAXA2n, j=TAXA2n; i ≠ j],
@@ -46,7 +47,7 @@ function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true) # D is a dist
 end
 
 # Non-graph based version of the MIP. 
-function BMEP_MILP(D::Matrix; relax = true, semi_relax = false, init_tau = zeros(D)) # D is a distance matrix (n x n)
+function BMEP_MILP(D::Matrix; relax = true, semi_relax = false, init_tau = fill(2, size(D))) # D is a distance matrix (n x n)
     n = size(D,1)
     TAXA = 1:n
     taxon1 = first(TAXA)

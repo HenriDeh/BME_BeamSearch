@@ -41,7 +41,7 @@ end
 tlmip = tree_length(τ, D)
 tlmip/tlfastme
 
-gopt = make_graph(τ)
+gopt = UBT_from_PLM(τ)
 
 @assert τ == path_length_matrix(gopt)
 path_length_matrix(gopt) .- τ

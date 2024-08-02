@@ -36,6 +36,20 @@ function ubtgraph_from_nwk(t)
     return g
 end
 
+function fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false)
+    D_to_txt(path, D)
+    fastme_local_search(path, tree_path; inittree)
+end
+
+function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::String)
+    D_to_txt(path,D)
+    nwk = PLM_to_nwk(τ)
+    open(tree_path, "w") do f
+        println(f, nwk)
+    end
+    fastme_local_search(path, tree_path, inittree = true)
+end
+
 function fastme_local_search(path::String, tree_path::String; inittree = false)
     if inittree
         run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -u $tree_path`, stdout=devnull))
@@ -52,12 +66,16 @@ function fastme_local_search(path::String, tree_path::String; inittree = false)
                 if tl < best
                     best = tl
                     mv("tmp.nwk", tree_path, force = true)
+                else
+                    rm("tmp.nwk")
                 end
             catch e #some -b methods of FastME may yield incorrect newicks
                 println("Method $method errored")
+                rm("tmp.nwk")
                 #throw(e)
                 continue
             end
+
         end
     end
     return ubtgraph_from_nwk(tree_path)
@@ -103,4 +121,22 @@ function ubt_to_nwk(g::Graph)
     end
     nwk *= "("^(prev_depth-pop!(depth_stack))
     return reverse(nwk)
+end
+
+function PLM_to_nwk(τ::Matrix)
+    nwk = ubt_to_nwk(UBT_from_PLM(τ))
+end
+
+function D_to_txt(datapath, D::Matrix)
+    open(datapath, "w") do f
+        println(f, string(size(D,1)))
+        for (i,r) in enumerate(eachrow(D))
+            print(f,i," ")
+            for e in r
+                print(f, string(round(e, digits = 10) , " "))
+            end
+            println(f,"")    
+        end
+    end
+    to_phylip(datapath)
 end

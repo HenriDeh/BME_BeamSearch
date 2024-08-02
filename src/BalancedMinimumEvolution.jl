@@ -5,7 +5,7 @@ const GRB_ENV_REF = Ref{Gurobi.Env}()
 function __init__()
         global GRB_ENV_REF
         GRB_ENV_REF[] = Gurobi.Env()
-        @eval const OPTIMIZER = () -> Gurobi.Optimizer(GRB_ENV_REF[])
+        #@eval const OPTIMIZER = () -> Gurobi.Optimizer(GRB_ENV_REF[])
         return
 end
 

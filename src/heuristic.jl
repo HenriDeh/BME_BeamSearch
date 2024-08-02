@@ -23,11 +23,12 @@ function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, rela
     push!(sububtnodes, c)
     while degree(g, c) > 3
         star_tips = sort(neighbors(g, c))
-        model = BMEP_MILP(g, D, c, relax = relax, complete = complete)
+        model = BMEP_MILP(g, D, c, relax = relax, complete = complete, init_tau = τ)
         set_silent(model)
-        optimize!(model) 
-        for ((i,j), dist) in value.(model[:τ]).data 
-            τ[i,j] = dist
+        optimize!(model)
+        sol = value.(model[:τ])
+        for (i,j) in combinations(star_tips, 2)
+            τ[i,j] = τ[j,i] = sol[i,j]
         end
         for _ in 1:iterate
             degree(g, c) > 3 || break
@@ -75,7 +76,7 @@ end
 function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, complete = false, fastme_postproc = false)
     time_start = time() 
     time_lim = time_start + max_time
-    prog = ProgressUnknown()
+    prog = ProgressUnknown(showspeed = true)
     D = read_distance_matrix(path)
     n = size(D,1)
     τ = Matrix{Float64}(undef, 2n-2, 2n-2) #preallocate once for inplace mutation
@@ -98,8 +99,8 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
         it += 1
         next!(prog)
         subtree = sample_neighborhood(current_ubt, K)
+        subtree_path_length_matrix!(τ, current_ubt, subtree)
         g_collasped, D_collasped, star_center, node_map = collaspe_to_inner_star(current_ubt, subtree, D)
-
         new_ubt = LP_heuristic(g_collasped, D_collasped, star_center, τ, iterate = repair_iterate; nj_criterion, relax, complete, fastme_postproc)
         PLM_new = path_length_matrix(new_ubt)
         val = tree_length(PLM_new, D)

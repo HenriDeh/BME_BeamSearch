@@ -1,19 +1,27 @@
 using JuMP, Combinatorics
 export BMEP_MILP
 
-function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
+function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true, init_tau = fill(2, size(D))) # D is a distance matrix (2n-2 x 2n-2), g is a graph containing a star with n branches and internal node c = n+1 
     n = degree(g,c)
     TAXA = sort(collect(neighbors(g,c)))
     taxon1 = first(TAXA)
     TAXA2n = TAXA[2:end]
     LENGTHS = 2:n-1
-    model = Model(OPTIMIZER)
-    #set_string_names_on_creation(model, false)
-    @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin)
+    model = direct_model(Gurobi.Optimizer(GRB_ENV_REF[]))
+    set_string_names_on_creation(model, false)
+    if relax
+        @variable(model, 0 <= _x[i=TAXA, j=TAXA, l=LENGTHS; i<j] <=1, start = init_tau[i,j] == l ? 1 : 0)
+    else
+        @variable(model, _x[i=TAXA, j=TAXA, l=LENGTHS; i<j], Bin, start = init_tau[i,j] == l ? 1 : 0)
+    end
     @expression(model, x[i=TAXA, j=TAXA, l=LENGTHS; i≠j], _x[minmax(i,j)...,l])
     @expression(model, τ[i=TAXA, j=TAXA; i≠j], sum(l*_x[minmax(i,j)...,l] for l in LENGTHS))
     if complete
-        @variable(model, _y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p < q], Bin)
+        if relax
+            @variable(model, 0 <= _y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p < q] <= 1)
+        else
+            @variable(model, _y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p < q])
+        end
         @expression(model, y[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q], _y[j, minmax(p,q)...])
     end
     
@@ -40,9 +48,6 @@ function BMEP_MILP(g, D::Matrix, c; complete = true, relax = true) # D is a dist
     end
 
     @objective(model, Min, sum(D[i,j]*sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i≠j))
-    if relax
-        relax_integrality(model)
-    end
     return model
 end
 

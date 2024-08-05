@@ -50,14 +50,15 @@ function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::Str
     fastme_local_search(path, tree_path, inittree = true)
 end
 
-function fastme_local_search(path::String, tree_path::String; inittree = false)
+function fastme_local_search(path::String, tree_path::String; inittree = false, methods = ["b","o","i","n","u"])
     if inittree
         run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -u $tree_path`, stdout=devnull))
         mv("tmp.nwk", tree_path, force = true)
     else
+        @assert all(in(["b","o","i","n","u"]), methods)
         D = read_distance_matrix(path)
         best = Inf
-        for method in ["b","o","i"]
+        for method in methods
             run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -m $method`, stdout=devnull))
             try
                 g = ubtgraph_from_nwk("tmp.nwk")

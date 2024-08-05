@@ -13,6 +13,6 @@ n = only(unique(size(D)))
 g = fastme_local_search(path, tree_path)
 tree_length(path_length_matrix(g), D)
 #LNS
-final = LNS_matheuristic(path, 40, tree_path, max_time = 60*60, max_it = Inf, inittree = false, nj_criterion = false, complete = false, fastme_postproc = false)
+final = LNS_matheuristic(path, 20, tree_path, max_time = 60*60, max_it = Inf, inittree = false, nj_criterion = false, complete = true, fastme_postproc = false)
 g2 = fastme_local_search(path, final, inittree = true)
 tree_length(path_length_matrix(g2), D)

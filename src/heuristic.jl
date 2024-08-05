@@ -13,31 +13,25 @@ function contraction_select(candidates, τ)
     i, j = argmin(tup -> getindex(τ, tup...), combinations(candidates,2))
 end
 
-function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, relax = true, complete = false, fastme_postproc = false)
+function LP_heuristic(models, _g, D, c, τ; nj_criterion, fastme_postproc = false)
     g = copy(_g)
-    if complete && !relax
-        iterate = nv(g)
-    end
     sububtnodes = sort(neighbors(_g, c))
     K = length(sububtnodes)
     push!(sububtnodes, c)
-    while degree(g, c) > 3
-        star_tips = sort(neighbors(g, c))
-        model = BMEP_MILP(g, D, c, relax = relax, complete = complete, init_tau = τ)
-        set_silent(model)
+    K = degree(g, c)
+    while K > 3
+        star_tips = Dict(i => n for (i,n) in enumerate(neighbors(g, c)))
+        D_check = [D[star_tips[i],star_tips[j]] for i in 1:K, j in 1:K]
+        model = models[K]
+        set_distances!(model, D_check)
         optimize!(model)
-        sol = value.(model[:τ])
-        for (i,j) in combinations(star_tips, 2)
-            τ[i,j] = τ[j,i] = sol[i,j]
-        end
-        for _ in 1:iterate
-            degree(g, c) > 3 || break
-            i,j = !nj_criterion ? contraction_select(star_tips,τ) : nj_select(star_tips,τ)
-            v = join_neighbors!(g, c, i, j)
-            update_distances!(D, g, c, v, i, j, method = :average) # :average is always optimal
-            update_distances!(τ, g, c, v, i, j, method = :contraction)
-            push!(sububtnodes, v)
-        end 
+        τ_check = value.(model[:τ]).data
+        i_model, j_model = nj_criterion ? nj_select(1:K,τ_check) : contraction_select(1:K,τ_check)
+        i, j = star_tips[i_model], star_tips[j_model]
+        v = join_neighbors!(g, c, i, j)
+        update_distances!(D, g, c, v, i, j, method = :average) # :average is always optimal
+        push!(sububtnodes, v)
+        K -= 1
     end
     #FastME post-processing
     if fastme_postproc
@@ -73,10 +67,9 @@ function LP_heuristic(_g, D, c, τ = similar(D); nj_criterion, iterate = 1, rela
     end
 end
 
-function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, inittree=false, nj_criterion = false, repair_iterate = 1, relax = true, complete = false, fastme_postproc = false)
+function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max_time = 60, inittree=false, nj_criterion = false, relax = true, complete = false, fastme_postproc = false)
     time_start = time() 
     time_lim = time_start + max_time
-    prog = ProgressUnknown(showspeed = true)
     D = read_distance_matrix(path)
     n = size(D,1)
     τ = Matrix{Float64}(undef, 2n-2, 2n-2) #preallocate once for inplace mutation
@@ -95,13 +88,18 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
     it = 0
     last_improve_it = 0
     best_tree_path = tree_path
+    models = Dict(k => BMEP_MILP(zeros(k,k); complete) for k in 3:K) # prebuild models of each size, once.
+    for model in values(models)
+        set_silent(model)
+    end
+    prog = ProgressUnknown(showspeed = true)
     while it < max_it && time() < time_lim
         it += 1
         next!(prog)
         subtree = sample_neighborhood(current_ubt, K)
         subtree_path_length_matrix!(τ, current_ubt, subtree)
         g_collasped, D_collasped, star_center, node_map = collaspe_to_inner_star(current_ubt, subtree, D)
-        new_ubt = LP_heuristic(g_collasped, D_collasped, star_center, τ, iterate = repair_iterate; nj_criterion, relax, complete, fastme_postproc)
+        new_ubt = LP_heuristic(models, g_collasped, D_collasped, star_center, τ; nj_criterion, fastme_postproc)
         PLM_new = path_length_matrix(new_ubt)
         val = tree_length(PLM_new, D)
         if val < best_val

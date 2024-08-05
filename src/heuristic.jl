@@ -74,7 +74,7 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
     n = size(D,1)
     τ = Matrix{Float64}(undef, 2n-2, 2n-2) #preallocate once for inplace mutation
     if !inittree
-        current_ubt = fastme_local_search(path, tree_path)
+        current_ubt = fastme_local_search(path, tree_path, methods = ["b"])
         open(tree_path, "w") do f
             write(f, ubt_to_nwk(current_ubt))
         end
@@ -97,7 +97,6 @@ function LNS_matheuristic(path, K, tree_path = path*"_tree.nwk"; max_it=Inf, max
         it += 1
         next!(prog)
         subtree = sample_neighborhood(current_ubt, K)
-        subtree_path_length_matrix!(τ, current_ubt, subtree)
         g_collasped, D_collasped, star_center, node_map = collaspe_to_inner_star(current_ubt, subtree, D)
         new_ubt = LP_heuristic(models, g_collasped, D_collasped, star_center, τ; nj_criterion, fastme_postproc)
         PLM_new = path_length_matrix(new_ubt)

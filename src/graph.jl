@@ -260,13 +260,3 @@ function sample_neighborhood(g, K; K_leaves = false)
     subtree = (inner_nodes = selected, taxa_leaves = leaves, prune_leaves = candidates) # inner_nodes are the inner nodes of the ST, taxa_leaves are leaves of g and of ST, prune_leaves are leaves of ST but not of g 
     return subtree
 end
-
-# edits entries to let τ of the subtree be correct. Used to warm start the LP at a good and feasible solution.
-function subtree_path_length_matrix!(τ, g, subtree)
-    nodes = mapreduce(collect, vcat, [subtree.taxa_leaves; subtree.prune_leaves; subtree.inner_nodes])
-    g_sub, node_map = induced_subgraph(g, nodes)
-    plm = path_length_matrix(g_sub)
-    for (i,j) in combinations(size(plm,1),2)
-        τ[node_map[i], node_map[j]] = τ[node_map[j], node_map[i]] = plm[i,j]
-    end
-end

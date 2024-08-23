@@ -36,9 +36,9 @@ function ubtgraph_from_nwk(t)
     return g
 end
 
-function fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false)
+function fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
     D_to_txt(path, D)
-    fastme_local_search(path, tree_path; inittree)
+    fastme_local_search(path, tree_path; methods, inittree, verbose, spr)
 end
 
 function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::String)
@@ -50,34 +50,42 @@ function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::Str
     fastme_local_search(path, tree_path, inittree = true)
 end
 
-function fastme_local_search(path::String, tree_path::String; inittree = false, methods = ["b","o","i","n","u"])
+function fastme_local_search(path::String, tree_path::String; inittree = false, methods = ["b","o","i","n","u"], verbose = true, spr = true)
     if inittree
-        run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -u $tree_path`, stdout=devnull))
+        run(pipeline(`$(fastmeMP()) --spr -i $path -T $(Threads.nthreads()) -o tmp.nwk -w BalLS -m u -u $tree_path`, stdout=devnull))
         mv("tmp.nwk", tree_path, force = true)
     else
         @assert all(in(["b","o","i","n","u"]), methods)
         D = read_distance_matrix(path)
         best = Inf
         for method in methods
-            run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w none -m $method`, stdout=devnull))
+            if spr
+                run(pipeline(`$(fastmeMP()) -i $path --spr -T $(Threads.nthreads()) -o tmp.nwk -w BalLS -m $method`, stdout=devnull))
+            else
+                run(pipeline(`$(fastmeMP()) -i $path -T $(Threads.nthreads()) -o tmp.nwk -w BalLS -m $method`, stdout=devnull))
+            end
             try
                 g = ubtgraph_from_nwk("tmp.nwk")
                 tl = tree_length(path_length_matrix(g), D)
-                println("FastME init method $method yielded tree length $tl")
+                if verbose
+                    println("FastME$(spr ? "+spr" : "") init method $method yielded tree length $tl")
+                end
                 if tl < best
                     best = tl
                     mv("tmp.nwk", tree_path, force = true)
                 else
                     rm("tmp.nwk")
                 end
-            catch e #some -b methods of FastME may yield incorrect newicks
-                println("Method $method errored")
+            catch e #some -b methods of FastME may yield incorrect newicks on Windows
+                if verbose
+                    println("Method $method errored")
+                end
                 rm("tmp.nwk")
                 #throw(e)
                 continue
             end
-
         end
+
     end
     return ubtgraph_from_nwk(tree_path)
 end
@@ -90,6 +98,7 @@ function read_distance_matrix(path::String)
 end
 
 function ubt_to_nwk(g::Graph)
+    n = length(leaves(g))
     nwk = ";"
     current = (nv(g)+2)÷2+1
     bf = bfs_tree(g,current)
@@ -112,7 +121,14 @@ function ubt_to_nwk(g::Graph)
         elseif length(nwk) > 1
             nwk *= ","
         end
-        nwk *= "$(reverse(string(current)))"
+#        nwk *= "$(reverse(string(current)))"
+        w = reverse(string(1.0)) # we give each edge a weight of 1 otherwise FastME thinks the tree has a length of 0.
+        if current <= n
+            nwk *= "$w:$(reverse(string(current)))"
+        else
+            nwk *= "$w:"
+        end
+
 
         for n in outneighbors(bf, current)
             push!(S, n)
@@ -126,18 +142,4 @@ end
 
 function PLM_to_nwk(τ::Matrix)
     nwk = ubt_to_nwk(UBT_from_PLM(τ))
-end
-
-function D_to_txt(datapath, D::Matrix)
-    open(datapath, "w") do f
-        println(f, string(size(D,1)))
-        for (i,r) in enumerate(eachrow(D))
-            print(f,i," ")
-            for e in r
-                print(f, string(round(e, digits = 10) , " "))
-            end
-            println(f,"")    
-        end
-    end
-    to_phylip(datapath)
 end

@@ -55,3 +55,18 @@ function to_phylip(path::String)
         close(file)
     end
 end
+
+
+function D_to_txt(datapath, D::Matrix)
+    open(datapath, "w") do f
+        println(f, string(size(D,1)))
+        for (i,r) in enumerate(eachrow(D))
+            print(f,i," ")
+            for e in r
+                print(f, string(round(e, digits = 10) , " "))
+            end
+            println(f,"")    
+        end
+    end
+    to_phylip(datapath)
+end

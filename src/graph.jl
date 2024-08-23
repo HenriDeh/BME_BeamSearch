@@ -15,8 +15,9 @@ function find_cherry(D::Matrix, neighbors)
     return nothing
 end
 
-function star_graph(D)
-    n = size(D,1)
+star_graph(D::Matrix) = star_graph(size(D,1))
+
+function star_graph(n::Int)
     g = Graph(n+1)
     c = n+1
     for i in 1:c-1
@@ -130,19 +131,10 @@ function collaspe_to_inner_star(_g, subtree, D::Matrix) #D is the distance matri
     end
     while !isempty(parents)
         (c1, c2), p = pop!(parents)
-        try
-            pop!(remaining, c1)
-            pop!(remaining, c2)
-        catch e
-            println.(edges(g))
-            println(c1," ", c2," ", p)
-            println(neighbors(g,c))
-            rethrow(e)
-        end
+        pop!(remaining, c1)
+        pop!(remaining, c2)
         for v in remaining
-            D2[p, v] = (D2[c1, v] + D2[c2, v])/2# - D2[c1,c2])/2 #contraction of c1 and c2 into their parent.
-            # D2[p, v] = (D2[c1, v] + D2[c2, v] - D2[c1,c2])/2 #NJ variant. Unused as the above is known to be optimal.
-            D2[v, p] = D2[p, v]
+            D2[v, p] = D2[p, v] = (D2[c1, v] + D2[c2, v])/2# - D2[c1,c2])/2 #contraction of c1 and c2 into their parent.
         end
         push!(remaining, p)
     end

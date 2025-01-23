@@ -9,92 +9,88 @@ using CSV, DataFrames, Statistics, JuMP, Combinatorics
 import Random
 
 # Matheuristic vs neighborhood joining 
-datasets = ["01-Primates12", "02-M17", "03-M18", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "RDSM32", "RDSM64"]
+datasets = [["01-Primates12", "02-M17", "03-M18", "04-SeedPlants500", "05-M43", "06-M62", "07-RbcL55", "08-Rana64", "09-M82"];["100_rdpii_F81", "100_rdpii_F84", "100_rdpii_K2P", "100_rdpii_JC69"]]#,"200_rdpii_F81", "200_rdpii_F84", "200_rdpii_K2P", "200_rdpii_JC69","300_zilla_F81", "300_zilla_F84", "300_zilla_K2P", "300_zilla_JC69"]]; 
+#datasets = [["RDSM32"]; ["RDSM64"];["RDSM128"];["RDSM256"];["RDSM512"];["RDSM1024"];["RDSM2048"]]
+#datasets = ["05-M43"]
+output_path = "data/MH_results.csv"
 begin
-    experiments = [(id = "c"*string(Int(e))*"r"*string(Int(r)) , complete = e, nj_criterion = r) for (e,r) in Iterators.product((true, false),(true, false))]
-    if !isfile("data/MH_results.csv") 
-        df = DataFrame(dataset=[], fastmemh = [], fastme_b = [], fastme_i = [], fastme_o = [], fastme_n = [], fastme_u = [], heuristic = [], gap = [], nj = [], complete = [], nj_criterion = [], time = [], radius_complete = [], radius_relaxation= [],lp_gap=[])
-        CSV.write("data/MH_results.csv", df)
+    if !isfile(output_path)
+        df = DataFrame(dataset= [], 
+                        n = [],
+                        method = [],
+                        length = [],
+                        time = [],
+                        id = []
+                        )
+        CSV.write(output_path, df)
     end
-    global counter = 0
-    df = CSV.read("data/MH_results.csv", DataFrame)
+    df = CSV.read(output_path, DataFrame)
+    checkpoints = Set(df.id) 
     for dataset in datasets
-        for experiment in experiments
-            global counter += 1
-            if nrow(df) >= counter 
-                continue #checkpointing
-            end
-            experiment_id = experiment.id
-            complete = experiment.complete
-            nj_criterion = experiment.nj_criterion
-            println("-"^90)
-            println(dataset)
-            println(experiment_id)
-            path = joinpath("data", dataset, dataset*".txt")
-            exp_path = joinpath("data",dataset,"experiment$experiment_id")
-            if !isdir(exp_path)
-                mkdir(joinpath("data",dataset,"experiment$experiment_id"))
-            end
-            tree_path = joinpath(exp_path, "tree.nwk")
-            D = read_distance_matrix(path);
-            n = only(unique(size(D)))
-            # Repair
-            g = Graph(n+1)
-            c = n+1
-            for i in 1:c-1
-                add_edge!(g, i, c)
-            end
-            D_ = BME.extend_distance(D);
-
-            rtime = @elapsed gmh = BME.LP_heuristic(g, D_, c, complete = complete, nj_criterion = nj_criterion)
-            tl = BME.tree_length(path_length_matrix(gmh), D)
-
-            gfmmh = try
-               open("tmp_tree.nwk", "w") do f
-                    println(f, ubt_to_nwk(gmh))
-                    fastme_local_search(path, "tmp_tree.nwk", inittree = true)
-                end
-            finally
-                rm("tmp_tree.nwk")            
-            end
-            tlfmmh = tree_length(path_length_matrix(gfmmh), D)
-
-            tlfastme = Dict{String, Float64}()
-            for method in ["b", "i", "o", "n", "u"]
-                try
-                    gfm = fastme_local_search(path, tree_path, methods = [method])
-                catch e
-                    tlfastme[method] = Inf
-                end
-
-                tlfastme[method] = tree_length(path_length_matrix(gfm), D)
-            end
-
-            gnj = neighbor_joining(D)
-            tlnj = tree_length(path_length_matrix(gnj), D)
-
-            model = BME.BMEP_MILP(g, D_, c; relax = true)
-            optimize!(model)
-            τ_tilde = similar(D)
-            for ((i,j), dist) in value.(model[:τ]).data 
-                τ_tilde[i,j] = dist
-                τ_tilde[i,i] = 0.
-                τ_tilde[j,j] = 0.
-            end
-            radius_complete = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
-            
-            model = BME.BMEP_MILP(g, D_, c; relax = true, complete = false)
-            optimize!(model)
-            for ((i,j), dist) in value.(model[:τ]).data 
-                τ_tilde[i,j] = dist
-                τ_tilde[i,i] = 0.
-                τ_tilde[j,j] = 0.
-            end
-            radius_relaxation = maximum(abs.(path_length_matrix(gmh) .- τ_tilde[1:n,1:n]))
-            lp_gap = tl/tree_length(τ_tilde, D)-1
-
-            push!(df,(dataset=dataset, fastmemh = tlfmmh, fastme_b = tlfastme["b"], fastme_i = tlfastme["i"], fastme_o = tlfastme["o"], fastme_n = tlfastme["n"], fastme_u = tlfastme["u"], heuristic = tl, gap = tl/tlfastme-1, nj = tlnj, complete = complete, nj_criterion = nj_criterion, time = rtime, radius_complete=radius_complete, radius_relaxation=radius_relaxation, lp_gap = lp_gap), promote = true)
-            CSV.write("data/MH_results.csv",df)            
+        println("-"^90)
+        println(dataset)
+        path = joinpath("data", dataset, dataset*".txt")
+        Dfull = read_distance_matrix(path);
+        N = only(unique(size(Dfull)))
+        maxn = min(45, N)
+        minn = maxn
+        while minn > 20 
+            minn -= 10 
         end
+        exp_path = joinpath("data",dataset,"matheuristic_outputs")
+        if !isdir(exp_path)
+            mkdir(exp_path)
+        end
+        for n in minn:10:maxn
+            println("n = ",n)
+            D = Dfull[1:n,1:n]
+            for max_coi_cuts in [0,5,10]
+                method = "LPNJ"*string(max_coi_cuts)
+                id = dataset*"("*string(n)*")"*method
+                if id in checkpoints
+                    continue
+                end
+                print(method)
+                tree_path = joinpath(exp_path, "tree.nwk")
+                rtime = @elapsed gmh = BME.LP_heuristic(D, triangular = true, buneman = false, max_coi_cuts = max_coi_cuts, scale = false)
+                tl = BME.tree_length(path_length_matrix(gmh), D)
+                push!(df, (dataset = dataset, n = n, method = method, length = tl, time = rtime, id = id), promote = true)
+                print(" ", tl, " SPR => ")
+                open(tree_path, "w") do f
+                    write(f, BME.ubt_to_nwk(gmh))
+                end
+                rtime += @elapsed gfm = fastme_local_search(D, tree_path, inittree = true)
+                tl = BME.tree_length(path_length_matrix(gfm), D)
+                println(tl)
+                method = method*"-spr"
+                id = dataset*"("*string(n)*")"*method
+                push!(df, (dataset = dataset, n = n, method = method, length = tl, time = rtime, id = id), promote = true)
+            end
+            tlfastme = Dict{String, Float64}()
+            methods = ["b", "i", "o", "n", "u"]
+            for spr in (true, false)
+                for method in methods
+                    label = method*(spr ? "-spr" : "")
+                    id = dataset*"("*string(n)*")"*label
+                    if id in checkpoints
+                        continue
+                    end
+                    fmtime = @elapsed begin
+                        gfm = try
+                            gfm = fastme_local_search(D, "tmp_tree.nwk", methods = [method], spr = spr)
+                            tlfastme[label] = tree_length(path_length_matrix(gfm), D)
+                            gfm
+                        catch e
+                            tlfastme[label] = Inf
+                        finally
+                            rm("tmp_tree.nwk", force = true)
+                        end
+                    end
+                    push!(df, (dataset = dataset, n = n, method = label, length = tlfastme[label], time = fmtime, id = id), promote = true)
+                end
+            end
+        end
+        CSV.write(output_path,df)        
+        println()    
     end
 end

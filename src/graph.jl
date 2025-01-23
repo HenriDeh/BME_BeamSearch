@@ -3,7 +3,11 @@ using Combinatorics, InvertedIndices, OffsetArrays, StatsBase
 import DataStructures.Stack
 @reexport using Graphs
 
-export UBT_from_PLM, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph
+export UBT_from_PLM, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph, tree_length
+
+function tree_length(plm::Matrix, D)
+    sum(D[i,j]*2.0^-plm[i,j] for (i,j) in combinations(1:size(plm,1),2), init = 0.)*2
+end
 
 function find_cherry(D::Matrix, neighbors)
     for i in neighbors
@@ -237,18 +241,57 @@ function path_length_matrix(ubt::Graph)
     return τ
 end
 
-function sample_neighborhood(g, K; K_leaves = false) 
-    start = rand(inner_nodes(g))
-    selected = Set([start])
-    leaves = Set(filter(n->degree(g,n) == 1, neighbors(g,start)))
-    candidates = Set{Int}(filter(n->degree(g,n) == 3, neighbors(g,start)))
-    while (K_leaves && length(leaves) < K) || length(selected) < K-2
-        new_node = rand(candidates)
-        push!(selected, new_node)
-        pop!(candidates, new_node)
-        union!(candidates, setdiff(filter(n->degree(g,n) == 3, neighbors(g,new_node)), selected)) #add its neighbors in candidates if they have degree 3
-        union!(leaves, filter(n->degree(g,n) == 1, neighbors(g,new_node)))  #neighbors with degree 1 are leaves of g
+function compute_splits(g::Graph) 
+    if length(vertices(g)) == length(edges(g)) + 1
+        compute_splits(g, length(leaves(g))+1)
+    else
+        root = sum(degree(g) .== 1) + 1
+        compute_splits(g, root)
     end
-    subtree = (inner_nodes = selected, taxa_leaves = leaves, prune_leaves = candidates) # inner_nodes are the inner nodes of the ST, taxa_leaves are leaves of g and of ST, prune_leaves are leaves of ST but not of g 
-    return subtree
+end
+# root must be |Γ|+1, usually the center of the star_graph
+function compute_splits(g::Graph, root)
+    taxa = Set(collect(1:root-1))
+
+    subtrees = Dict{Int, Set{Int}}()
+    splits = Set{Tuple{Set{Int},Set{Int}}}()
+    stack = Stack{Tuple{Int,Int}}()
+    push!(stack, (0, root)) # root of postorder traversal, 0 is dummy parent
+    visited = Set{Int}() # to not revisit parents as g is undirected
+
+    # Stacks for processing internal nodes after children are visited
+    postorder_stack = Stack{Tuple{Int,Int}}()
+    while !isempty(stack)
+        p, n = pop!(stack)
+        push!(postorder_stack, (p,n))
+        push!(visited, n)
+
+        for c in neighbors(g, n)
+            c in visited && continue
+            push!(stack, (n,c))
+        end
+    end
+    # Process nodes in postorder and compute the subtrees of each node
+    while !isempty(postorder_stack)
+        (p, n) = pop!(postorder_stack)
+        if degree(g, n) == 1
+            subtrees[n] = Set([n])
+        else
+            subtrees[n] = union([subtrees[c] for c in neighbors(g, n) if c != p]...)
+        end
+        p == 0 && continue
+        a,b = subtrees[n], setdiff(taxa, subtrees[n])
+        push!(splits, (a,b))
+        push!(splits, (b,a))
+    end
+    return splits
+end
+
+are_same_topologies(g1::Graph, g2::Graph) = are_same_topologies(compute_splits(g1), compute_splits(g2))
+
+function are_same_topologies(splitsT1, splitsT2)
+    if length(splitsT1) != length(splitsT2) 
+        @error "Trees do not have same number of splits"
+    end
+    return all(in(splitsT2), splitsT1)
 end

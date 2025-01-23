@@ -36,9 +36,32 @@ function ubtgraph_from_nwk(t)
     return g
 end
 
+function fastme_local_search(D::Matrix, g::Graph)
+    tmp_tree = "testtree.nwk"
+    open(tmp_tree, "w") do f
+        write(f, ubt_to_nwk(g))
+    end
+
+    gspr = try 
+        fastme_local_search(D, tmp_tree, inittree = true)
+    finally
+        rm(tmp_tree, force = true)
+    end
+    return gspr
+end
+
 function fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
     D_to_txt(path, D)
     fastme_local_search(path, tree_path; methods, inittree, verbose, spr)
+end
+
+function fastme_local_search(D::Matrix, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
+    D_to_txt("tmpDfm.txt", D)
+    try 
+        return fastme_local_search("tmpDfm.txt", tree_path; methods, inittree, verbose, spr)
+    finally
+        rm("tmpDfm.txt", force = true)
+    end
 end
 
 function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::String)

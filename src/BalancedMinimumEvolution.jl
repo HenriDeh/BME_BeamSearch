@@ -15,11 +15,11 @@ end
 # end
 
 include("graph.jl")
-include("neighborhood_samplers.jl")
 include("linear_program.jl")
 include("neighbor_joining.jl")
-include("heuristic.jl")
-#include("plotting.jl")
 include("fastme.jl")
+include("beam_search.jl")
 include("phylip_convert.jl")
+# include("LNS/heuristic.jl")
+# include("LNS/neighborhood_samplers.jl")
 end # module BalancedMinimumEvolution

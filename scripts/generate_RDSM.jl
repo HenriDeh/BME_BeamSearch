@@ -24,7 +24,7 @@ function generate_symmetric_doubly_stochastic(n; tol=1e-9, max_iter=1000)
     return A
 end
 
-for n in 2 .^ [5:11;]
+for n in 10:5:60
     D = generate_symmetric_doubly_stochastic(n)
     dirpath=joinpath("data", "RDSM$(n)")
     if !isdir(dirpath)

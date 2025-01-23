@@ -50,8 +50,8 @@ function join_neighbors!(g, c, i, j)
 end
 
 # compute the average distance from v to all neighbors of c, where v is the node that agregates i and j
-function update_distances!(D, g, c, v, i, j; method = :nj)
-    if method == :nj
+function update_distances!(D, g, c, v, i, j; method = :average)
+    if method == :dij
         reduction = D[i, j]
     elseif method == :average
         reduction = 0.

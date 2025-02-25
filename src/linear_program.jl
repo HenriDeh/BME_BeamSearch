@@ -8,6 +8,7 @@ function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, i
     TAXA2n = TAXA[2:end]
     Lmax = max_length ? min(n-1, ceil(log2(n-1)^2)) : n-1
     LENGTHS = 2:Lmax
+    Lshift = scale ? Lmax : 0
     model = Model(OPTIMIZER, add_bridges = false)
     set_string_names_on_creation(model, false)
     @expression model n n
@@ -55,7 +56,7 @@ function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, i
     end
     @expression(model, tree_length, sum(D[i,j]*sum(exp2(-(l-1))*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i<j))
     if scale
-        @objective(model, Min, sum(D[i,j]*sum(exp2(Lmax-(l-1))*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i<j))
+        @objective(model, Min, sum(D[i,j]*sum(exp2(Lshift-(l-1))*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i<j))
     else
         @objective(model, Min, tree_length)
     end

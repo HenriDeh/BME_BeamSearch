@@ -12,11 +12,13 @@ function generate_symmetric_integer_matrix(N::Int)
 end
 
 for n in 10:5:60
-    D = generate_symmetric_integer_matrix(n)
-    dirpath = joinpath("data", "RIM$(n)")
-    if !isdir(dirpath)
-        mkdir(dirpath)
+    for i in 'a':'j'
+        D = generate_symmetric_integer_matrix(n)
+        dirpath = joinpath("data", "RIM$(n)$i")
+        if !isdir(dirpath)
+            mkdir(dirpath)
+        end
+        datapath = joinpath(dirpath, "RIM$(n)$i.txt")
+        D_to_txt(datapath, D)
     end
-    datapath = joinpath(dirpath, "RIM$(n).txt")
-    D_to_txt(datapath, D)
 end

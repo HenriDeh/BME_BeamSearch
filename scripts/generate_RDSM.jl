@@ -25,11 +25,13 @@ function generate_symmetric_doubly_stochastic(n; tol=1e-9, max_iter=1000)
 end
 
 for n in 10:5:60
-    D = generate_symmetric_doubly_stochastic(n)
-    dirpath=joinpath("data", "RDSM$(n)")
-    if !isdir(dirpath)
-        mkdir(dirpath)
+    for i in 'a':'j'
+        D = generate_symmetric_doubly_stochastic(n)
+        dirpath=joinpath("data", "RDSM$(n)$i")
+        if !isdir(dirpath)
+            mkdir(dirpath)
+        end
+        datapath = joinpath(dirpath,"RDSM$(n)$i.txt")
+        D_to_txt(datapath, D)
     end
-    datapath = joinpath(dirpath,"RDSM$(n).txt")
-    D_to_txt(datapath, D)
 end

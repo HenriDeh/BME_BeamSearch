@@ -73,8 +73,10 @@ function beam_search(D_start, B; spr = true)
         for state in states
             D = state.D
             candidates = 1:K
+            col_sums = sum(D, dims = 1)
+            sum_D = sum(col_sums)
             for (i,j) in combinations(candidates, 2)
-                star_tree_length = sum(D[a,b] for (a,b) in combinations(candidates, 2) if a != i && a != j && b != i && b != j)/(K-2) + sum(D[i,k] + D[j,k] for k in candidates if k != i && k != j)/(2*(K-2))
+                star_tree_length = (sum_D - col_sums[i] - col_sums[j])/(2(K-2))
                 push!(heap, (cherry = (i,j), Q = state.l + D[i,j]/2 + star_tree_length, parent = state))
             end
         end

@@ -197,7 +197,7 @@ begin
     end
     dfA_gap.B = string.(dfA_gap.B)
     replace!(dfA_gap.B, "0" => "-")
-    open("beam_tables_gap_A.tex", "w") do io
+    open("beamSPR_tables_gap_A.tex", "w") do io
         println(io, "\\begin{tabular}{llrrrrrrrrrrr}")
         println(io, "\\toprule")
         println(io, "&& \\multicolumn{11}{c}{\\textbf{Instance size (n)}} \\\\")

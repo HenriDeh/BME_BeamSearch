@@ -37,22 +37,22 @@ function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, i
             sum(sum(exp2(-l)*x[i,j,l] for l in LENGTHS) for j in TAXA if j ≠ i)  == 0.5
         c_manifold, 
             sum(l*exp2(-l)*x[i,j,l] for i in TAXA, j in TAXA, l in LENGTHS if i≠j) == (2n-3)
+    end
+    if triangular
+        @constraints model begin
+            c_str_triangular[i=TAXA2n, j=TAXA2n; i ≠ j],
+                τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2 + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
+            c_str_triangular2[i=TAXA2n, j=TAXA2n; i ≠ j],
+                τ[taxon1, i] + τ[i,j] - τ[taxon1,j] >= 2 + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
         end
-        if triangular
-            @constraints model begin
-                c_str_triangular[i=TAXA2n, j=TAXA2n; i ≠ j],
-                    τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2
-                c_str_triangular2[i=TAXA2n, j=TAXA2n; i ≠ j],
-                    τ[taxon1, i] + τ[i,j] - τ[taxon1,j] >= 2
-            end
-        end
-        if buneman
-            @constraints model begin
-                c_bun_sum[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
-                    y[j,p,q] + y[p,j,q] + y[q,j,p] == 1            
-                c_buneman[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
-                    τ[taxon1,j] + τ[p,q] >= 2(1 - y[q,j,p]) + τ[taxon1,p] + τ[j,q] - (2n - 2)y[j,p,q]
-        end
+    end
+    if buneman
+        @constraints model begin
+            c_bun_sum[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
+                y[j,p,q] + y[p,j,q] + y[q,j,p] == 1            
+            c_buneman[j = TAXA2n, p = TAXA2n, q = TAXA2n; j ≠ p && j ≠ q && p ≠ q],
+                τ[taxon1,j] + τ[p,q] >= 2(1 - y[q,j,p]) + τ[taxon1,p] + τ[j,q] - (2n - 2)y[j,p,q]
+    end
     end
     @expression(model, tree_length, sum(D[i,j]*sum(exp2(-(l-1))*x[i,j,l] for l in LENGTHS) for i in TAXA, j in TAXA if i<j))
     if scale

@@ -85,12 +85,13 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
             model = models[K]
             set_distances!(model, D; scale)
             solve_BME_model!(model; max_coi_cuts)
-            candidates = 1:K
             LB = value(model[:tree_length])
+            # println("The length of the lower bound is $(LB + state.l)")
             τ = value.(model[:τ])
-            for (i,j) in combinations(candidates, 2)
+            for (i,j) in combinations(1:K,2)
                 lb_delta = D[i,j]/2 - D[i,j]/exp2(τ[i,j]-1)
                 Q = LB + state.l + lb_delta
+                # Q = state.l + D[i,j]/2 + sum(D[p,q]/exp2(τ[p,q]) for p in 1:K, q in 1:K if p ∉ (i,j) && q ∉ (i,j,p)) + sum((D[i,k] + D[j,k])/2*exp2(-((τ[i,k]+τ[j,k])/2-1)) for k in 1:K if k ∉ (i,j))
                 if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) 
                     child_splits = cherry_splits(state.star_tips[i], state.star_tips[j], c, state) # If multiple childs are equivalent but the heap is full, childs are arbitrarily discarded to keep the size to B.
                     if child_splits ∉ splits_sets 
@@ -100,13 +101,14 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
                         if length(heap) > B 
                             popmax!(heap)
                         end
-                    end
+                    end 
                 end 
             end
         end
         empty!(states)
         while length(states) < B && !isempty(heap)
             child = popmin!(heap)
+            # println("The length of the child is $(child.Q)")
             gchild = copy(child.parent.graph)
             star_tips = child.parent.star_tips
             D = child.parent.D
@@ -118,6 +120,7 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
         end
         K -= 1
     end
+    # println("The length of the solution is $(states[1].l + sum(states[1].D)/4)")
     if spr
         return [fastme_local_search(D_start, s.graph) for s in states]
     else
@@ -140,10 +143,9 @@ function beam_search(D_start, B; spr = true)
         empty!(splits_sets)
         for state in states
             D = state.D
-            candidates = 1:K
             col_sums = sum(D, dims = 1)
             sum_D = sum(col_sums)
-            for (i,j) in combinations(candidates, 2)
+            for (i,j) in combinations(1:K, 2)
                 star_tree_length = (sum_D - col_sums[i] - col_sums[j])/(2(K-2))
                 Q = state.l + D[i,j]/2 + star_tree_length
                 if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) 

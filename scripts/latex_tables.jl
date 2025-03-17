@@ -96,7 +96,7 @@ let
     open("beam_tables.tex", "w") do io
         println(io, "\\begin{tabular}{llrrrrrrrr|rrrrrrrr}")
         println(io, "\\toprule")
-        println(io, "&& \\multicolumn{8}{c}{\\textbf{Agglomerative}} & \\multicolumn{8}{c}{\\textbf{Agglomerative + SPR}} \\\\")
+        println(io, "&& \\multicolumn{8}{c}{\\textbf{Agglomeration}} & \\multicolumn{8}{c}{\\textbf{Agglomeration + SPR}} \\\\")
         println(io, "\\cmidrule(lr){3-10} \\cmidrule(lr){11-18}")
         println(io, "&& \\multicolumn{2}{c}{Set A} & \\multicolumn{2}{c}{Set B}& \\multicolumn{2}{c}{Set C}& \\multicolumn{2}{c}{Set D} & \\multicolumn{2}{c}{Set A} & \\multicolumn{2}{c}{Set B}& \\multicolumn{2}{c}{Set C}& \\multicolumn{2}{c}{Set D} \\\\")
         println(io, "\\cmidrule(lr){3-4} \\cmidrule(lr){5-6} \\cmidrule(lr){7-8} \\cmidrule(lr){9-10} \\cmidrule(lr){11-12} \\cmidrule(lr){13-14} \\cmidrule(lr){15-16} \\cmidrule(lr){17-18}")

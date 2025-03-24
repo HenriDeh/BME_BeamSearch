@@ -28,42 +28,34 @@ function reduce_matrix(D, i, j, v, star_tips)
     return D_check, star_tips
 end
 
-"""
-    cherry_splits(cherry, state, c)
+maxmin(x,y) = x > y ? (x,y) : (y,x)
 
-    Computes the splits of the child tree obtained by merging a cherry.
 """
-function cherry_splits(i, j, c, state)
+    merge_splits(i, j, c, state)
+
+    Computes the splits of the candidate tree obtained by merging a cherry i,j at state, with c being the central node of the star.
+"""
+function merge_splits(i, j, c, state)
     v = nv(state.graph) + 1
     parent_splits = state.splits
     splitsA1, splitsA2 = parent_splits[Edge(minmax(i, c))]
     splitsB1, splitsB2 = parent_splits[Edge(minmax(j, c))]
-    child_splits = copy(parent_splits)
-    child_splits[Edge(minmax(c, v))] = (union(splitsA1, splitsB1), intersect(splitsA2, splitsB2))
-    child_splits[Edge(minmax(v, i))] = parent_splits[Edge(minmax(i, c))]
-    child_splits[Edge(minmax(v, j))] = parent_splits[Edge(minmax(j, c))]
-    pop!(child_splits, Edge(minmax(i, c)))
-    pop!(child_splits, Edge(minmax(j, c)))
-    return child_splits
+    candidate_edges_splits_map = copy(parent_splits)
+    new_split = (union(splitsA1, splitsB1), intersect(splitsA2, splitsB2))
+    candidate_edges_splits_map[Edge(minmax(c, v))] = new_split
+    candidate_edges_splits_map[Edge(maxmin(v, c))] = (new_split[2], new_split[1])
+    candidate_edges_splits_map[Edge(minmax(v, i))] = parent_splits[Edge(minmax(i, c))]
+    candidate_edges_splits_map[Edge(maxmin(i, v))] = parent_splits[Edge(maxmin(i, c))]
+    candidate_edges_splits_map[Edge(minmax(v, j))] = parent_splits[Edge(minmax(j, c))]
+    candidate_edges_splits_map[Edge(maxmin(j, v))] = parent_splits[Edge(maxmin(j, c))]
+    pop!(candidate_edges_splits_map, Edge(minmax(i, c)))
+    pop!(candidate_edges_splits_map, Edge(maxmin(c, i)))
+    pop!(candidate_edges_splits_map, Edge(minmax(j, c)))
+    pop!(candidate_edges_splits_map, Edge(maxmin(c, j)))
+    return candidate_edges_splits_map
 end
 
-
-"""
-    push_to_heap!(heap, B, cherry, state, c, splits_sets)
-
-    Pushes a cherry to the heap if it is better than the worst cherry in the heap. 
-    If the heap is not full, the cherry is pushed to the heap. 
-    Otherwise, the cherry is pushed to the heap if it is better than the worst cherry in the heap.
-    Pushing only occurs if the splits of the child tree are not already in the heap.
-
-    A merge consist in adding one split to the child tree. (i, c) and (j, c) and (v, i) and (v, j).
-    The new split is (v, c) and is computed by merging the i and j sides of the splits of the parent tree.
-"""
-function push_to_heap!(heap, B, cherry, splits_sets)
-   
-end
-
-function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true, alltwos = false)
+function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true)
     _g, c = star_graph(D_start)
     n = only(unique(size(D_start)))
     models = Dict(k => BMEP_MILP(zeros(k,k); triangular, buneman, scale, max_length) for k in 3:n)
@@ -76,7 +68,7 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
     end
     K = n
     heap = BinaryMinMaxHeap{Cherry}()
-    splits_sets = Set([values(only(states).splits)])
+    splits_sets = Set{Set{Tuple{Set{Int64}, Set{Int64}}}}()
     while K > 3
         empty!(heap)
         empty!(splits_sets)
@@ -91,11 +83,12 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
             for (i,j) in combinations(1:K,2)
                 lb_delta = D[i,j]/2 - D[i,j]/exp2(τ[i,j]-1)
                 Q = LB + state.l + lb_delta
-                if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) || (alltwos && Q == maximum(heap).Q) 
-                    child_splits = cherry_splits(state.star_tips[i], state.star_tips[j], c, state) # If multiple childs are equivalent but the heap is full, childs are arbitrarily discarded to keep the size to B.
-                    if child_splits ∉ splits_sets 
-                        cherry = Cherry((i,j), Q, state, child_splits)
-                        push!(splits_sets, values(cherry.splits))
+                if length(heap) < B || Q < maximum(heap).Q # If multiple candidates are equivalent but the heap is full, one candidate among the equally worst is arbitrarily discarded to keep the size to B.
+                    candidate_edges_splits_map = merge_splits(state.star_tips[i], state.star_tips[j], c, state)
+                    candidate_splits = Set(tup for tup in values(candidate_edges_splits_map))
+                    if candidate_splits ∉ splits_sets 
+                        cherry = Cherry((i,j), Q, state, candidate_edges_splits_map)
+                        push!(splits_sets, candidate_splits)
                         push!(heap, cherry)
                         if length(heap) > B 
                             popmax!(heap)
@@ -106,20 +99,19 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
         end
         empty!(states)
         while length(states) < B && !isempty(heap)
-            child = popmin!(heap)
-            # println("The length of the child is $(child.Q)")
-            gchild = copy(child.parent.graph)
-            star_tips = child.parent.star_tips
-            D = child.parent.D
-            i_model, j_model = child.cherry
+            candidate = popmin!(heap)
+            # println("The length of the candidate is $(candidate.Q)")
+            graph = copy(candidate.parent.graph)
+            star_tips = candidate.parent.star_tips
+            D = candidate.parent.D
+            i_model, j_model = candidate.cherry
             i, j = star_tips[i_model], star_tips[j_model]
-            v = join_neighbors!(gchild, c, i, j)
+            v = join_neighbors!(graph, c, i, j)
             D_check, star_tips = reduce_matrix(copy(D), i_model, j_model, v, star_tips)
-            push!(states, State(gchild, D_check, child.parent.l + D[i_model,j_model]/2, star_tips, child.splits))
+            push!(states, State(graph, D_check, candidate.parent.l + D[i_model,j_model]/2, star_tips, candidate.splits))
         end
         K -= 1
     end
-    # println("The length of the solution is $(states[1].l + sum(states[1].D)/4)")
     if spr
         return [fastme_local_search(D_start, s.graph) for s in states]
     else
@@ -136,7 +128,7 @@ function beam_search(D_start, B; spr = true)
     end
     K = n
     heap = BinaryMinMaxHeap{Cherry}()
-    splits_sets = Set([values(only(states).splits)])
+    splits_sets = Set{Set{Tuple{Set{Int64}, Set{Int64}}}}()
     while K > 3
         empty!(heap)
         empty!(splits_sets)
@@ -147,30 +139,31 @@ function beam_search(D_start, B; spr = true)
             for (i,j) in combinations(1:K, 2)
                 star_tree_length = (sum_D - col_sums[i] - col_sums[j])/(2(K-2))
                 Q = state.l + D[i,j]/2 + star_tree_length
-                if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) 
-                    child_splits = cherry_splits(state.star_tips[i], state.star_tips[j], c, state) # If multiple childs are equivalent but the heap is full, childs are arbitrarily discarded to keep the size to B.
-                    if child_splits ∉ splits_sets 
-                        cherry = Cherry((i,j), Q, state, child_splits)
-                        push!(splits_sets, values(cherry.splits))
+                if length(heap) < B || Q < maximum(heap).Q
+                    candidate_edges_splits_map = merge_splits(state.star_tips[i], state.star_tips[j], c, state)
+                    candidate_splits = Set(tup for tup in values(candidate_edges_splits_map))
+                    if candidate_splits ∉ splits_sets 
+                        cherry = Cherry((i,j), Q, state, candidate_edges_splits_map)
+                        push!(splits_sets, candidate_splits) 
                         push!(heap, cherry)
                         if length(heap) > B 
                             popmax!(heap)
                         end
-                    end
+                    end 
                 end 
             end
         end
         empty!(states)
         while length(states) < B && !isempty(heap)
-            child = popmin!(heap)
-            gchild = copy(child.parent.graph)
-            star_tips = child.parent.star_tips
-            D = child.parent.D
-            i_model, j_model = child.cherry
+            candidate = popmin!(heap)
+            graph = copy(candidate.parent.graph)
+            star_tips = candidate.parent.star_tips
+            D = candidate.parent.D
+            i_model, j_model = candidate.cherry
             i, j = star_tips[i_model], star_tips[j_model]
-            v = join_neighbors!(gchild, c, i, j)
+            v = join_neighbors!(graph, c, i, j)
             D_check, star_tips = reduce_matrix(copy(D), i_model, j_model, v, star_tips)
-            push!(states, State(gchild, D_check, child.parent.l + D[i_model,j_model]/2, star_tips, child.splits))
+            push!(states, State(graph, D_check, candidate.parent.l + D[i_model,j_model]/2, star_tips, candidate.splits))
         end
         K -= 1
     end

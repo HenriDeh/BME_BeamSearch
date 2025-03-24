@@ -41,9 +41,9 @@ function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, i
     if triangular
         @constraints model begin
             c_str_triangular[i=TAXA2n, j=TAXA2n; i ≠ j],
-                τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2 + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
+                τ[taxon1, i] + τ[taxon1, j] - τ[i,j] >= 2 # + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
             c_str_triangular2[i=TAXA2n, j=TAXA2n; i ≠ j],
-                τ[taxon1, i] + τ[i,j] - τ[taxon1,j] >= 2 + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
+                τ[taxon1, i] + τ[i,j] - τ[taxon1,j] >= 2 # + sum(x[1,u,2] for u in TAXA2n if u ≠ i && u ≠ j)
         end
     end
     if buneman

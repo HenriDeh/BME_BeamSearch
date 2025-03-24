@@ -63,7 +63,7 @@ function push_to_heap!(heap, B, cherry, splits_sets)
    
 end
 
-function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true)
+function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true, alltwos = false)
     _g, c = star_graph(D_start)
     n = only(unique(size(D_start)))
     models = Dict(k => BMEP_MILP(zeros(k,k); triangular, buneman, scale, max_length) for k in 3:n)
@@ -91,8 +91,7 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
             for (i,j) in combinations(1:K,2)
                 lb_delta = D[i,j]/2 - D[i,j]/exp2(τ[i,j]-1)
                 Q = LB + state.l + lb_delta
-                # Q = state.l + D[i,j]/2 + sum(D[p,q]/exp2(τ[p,q]) for p in 1:K, q in 1:K if p ∉ (i,j) && q ∉ (i,j,p)) + sum((D[i,k] + D[j,k])/2*exp2(-((τ[i,k]+τ[j,k])/2-1)) for k in 1:K if k ∉ (i,j))
-                if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) 
+                if isempty(heap) || (Q < maximum(heap).Q || length(heap) < B) || (alltwos && Q == maximum(heap).Q) 
                     child_splits = cherry_splits(state.star_tips[i], state.star_tips[j], c, state) # If multiple childs are equivalent but the heap is full, childs are arbitrarily discarded to keep the size to B.
                     if child_splits ∉ splits_sets 
                         cherry = Cherry((i,j), Q, state, child_splits)

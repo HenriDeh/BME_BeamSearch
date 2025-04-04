@@ -220,7 +220,7 @@ begin
     end
 
     dftime  = @by dftime [:method, :n] begin
-        :time = ifelse(median(:time) < 0.01, round(median(:time), sigdigits = 2), round(median(:time), digits = 2))
+        :time = ifelse(median(:time) < 0.01, "\$<\\!0.01\$", string(round(median(:time), digits = 2)))
     end
     dftime = unstack(dftime, :n, :time)
 

@@ -1,6 +1,11 @@
 export beam_search, beam_search_lp
 using DataStructures
 
+"""
+    State
+
+Struct representing a state in the beam search, including the graph, distance matrix, tree length, star tips, and splits.
+"""
 struct State 
     graph::SimpleGraph
     D::Matrix{Float64}
@@ -9,6 +14,11 @@ struct State
     splits::Dict{Edge{Int}, Tuple{Set{Int},Set{Int}}}
 end
 
+"""
+    Cherry
+
+Struct representing a cherry (pair of leaves) in the beam search, with its score and parent state.
+"""
 struct Cherry
     cherry::Tuple{Int,Int}
     Q::Float64
@@ -18,6 +28,12 @@ end
 
 Base.isless(c::Cherry, d::Cherry) = c.Q < d.Q
 
+"""
+    reduce_matrix(D, i, j, v, star_tips)
+
+Reduce the distance matrix `D` by merging leaves `i` and `j` into node `v`.
+Update the star tips accordingly.
+"""
 function reduce_matrix(D, i, j, v, star_tips)
     n = only(unique(size(D)))
     i, j = minmax(i,j)
@@ -28,12 +44,17 @@ function reduce_matrix(D, i, j, v, star_tips)
     return D_check, star_tips
 end
 
+"""
+    maxmin(x, y)
+
+Return a tuple with the maximum and minimum of `x` and `y`.
+"""
 maxmin(x,y) = x > y ? (x,y) : (y,x)
 
 """
     merge_splits(i, j, c, state)
 
-    Computes the splits of the candidate tree obtained by merging a cherry i,j at state, with c being the central node of the star.
+Compute the splits of the candidate tree obtained by merging a cherry `i, j` at state, with `c` being the central node of the star.
 """
 function merge_splits(i, j, c, state)
     v = nv(state.graph) + 1
@@ -55,6 +76,22 @@ function merge_splits(i, j, c, state)
     return candidate_edges_splits_map
 end
 
+"""
+    beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true)
+
+Beam search using linear programming for the Balanced Minimum Evolution problem.
+Returns a list of trees.
+
+# Arguments
+- `D_start`: Initial distance matrix.
+- `B`: Beam width (number of states to keep at each step).
+- `triangular`: Use triangle inequalities in the LP.
+- `buneman`: Use Buneman constraints in the LP.
+- `scale`: Scale objective for numerical stability.
+- `max_coi_cuts`: Maximum number of circular ordering inequalities to add.
+- `max_length`: Use maximum path length constraint.
+- `spr`: Apply FastME local search to each candidate if true.
+"""
 function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = true, max_coi_cuts = 0, max_length = true, spr = true)
     _g, c = star_graph(D_start)
     n = only(unique(size(D_start)))
@@ -119,6 +156,17 @@ function beam_search_lp(D_start, B; triangular = true, buneman = false, scale = 
     end
 end
 
+"""
+    beam_search(D_start, B; spr = true)
+
+Beam search for the Balanced Minimum Evolution problem using a greedy approach.
+Returns a list of trees.
+
+# Arguments
+- `D_start`: Initial distance matrix.
+- `B`: Beam width (number of states to keep at each step).
+- `spr`: Apply FastME local search to each candidate if true.
+"""
 function beam_search(D_start, B; spr = true)
     _g, c = star_graph(D_start)
     n = only(unique(size(D_start)))

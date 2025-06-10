@@ -1,6 +1,20 @@
 using JuMP, Combinatorics
 export BMEP_MILP
 
+"""
+    BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, init_tau = fill(2, size(D)), scale = false, max_length = false)
+
+Create a JuMP model for the Balanced Minimum Evolution Problem (BMEP) as a MILP.
+
+# Arguments
+- `D::Matrix`: Distance matrix.
+- `relax`: If true, relax integrality constraints (LP relaxation).
+- `triangular`: If true, add triangle inequality constraints.
+- `buneman`: If true, add Buneman constraints.
+- `init_tau`: Initial values for the path-length matrix.
+- `scale`: If true, scale the objective for numerical stability.
+- `max_length`: If true, use a maximum path length constraint.
+"""
 function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, init_tau = fill(2, size(D)), scale = false, max_length = false) # D is a distance matrix (n x n)
     n = size(D,1)
     TAXA = 1:n
@@ -63,6 +77,17 @@ function BMEP_MILP(D::Matrix; relax = true, triangular = true, buneman = true, i
     return model
 end
 
+"""
+    set_distances!(model, D; scale = false, max_length = true)
+
+Set the distance matrix `D` in the JuMP model for BMEP.
+
+# Arguments
+- `model`: JuMP model.
+- `D`: Distance matrix.
+- `scale`: If true, scale the objective.
+- `max_length`: If true, use a maximum path length constraint.
+"""
 function set_distances!(model, D; scale = false, max_length = true)
     n = size(D,1)
     TAXA = 1:n
@@ -78,6 +103,14 @@ function set_distances!(model, D; scale = false, max_length = true)
     end
 end
 
+"""
+    add_cutting_circular_ordering_inequality!(model)
+
+Add a cutting circular ordering inequality to the BMEP model.
+
+# Arguments
+- `model`: JuMP model to modify.
+"""
 function add_cutting_circular_ordering_inequality!(model)
     τ = model[:τ]
     n = model[:n]
@@ -111,10 +144,20 @@ function add_cutting_circular_ordering_inequality!(model)
     end
 end
 
+"""
+    circuit_length(D, circuit)
+
+Compute the length of a circuit (tour) given distance matrix `D` and a circuit ordering.
+"""
 function circuit_length(D, circuit)
     sum(D[circuit[i-1], circuit[i]] for i in 2:(length(circuit))) + D[first(circuit), last(circuit)]
 end
 
+"""
+    two_opt(D, circuit)
+
+Perform 2-opt optimization on a circuit to minimize its length.
+"""
 function two_opt(D, circuit)
     new_circuit = deepcopy(circuit)
     best_length = circuit_length(D, circuit)
@@ -134,6 +177,15 @@ function two_opt(D, circuit)
     return new_circuit
 end
 
+"""
+    solve_BME_model!(model; max_coi_cuts = 0)
+
+Solve the BMEP model, optionally adding up to `max_coi_cuts` circular ordering inequalities.
+
+# Arguments
+- `model`: JuMP model to solve.
+- `max_coi_cuts`: Maximum number of circular ordering inequalities to add.
+"""
 function solve_BME_model!(model; max_coi_cuts = 0)
     cuts = 0
     optimize!(model) 

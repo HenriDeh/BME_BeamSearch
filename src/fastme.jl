@@ -3,8 +3,18 @@ using Phylo: parsenewick, traversal, isleaf, isroot, getparent, preorder
 import DataStructures.Stack
 export fastme_local_search, read_distance_matrix, ubtgraph_from_nwk
 
+"""
+    fastme_help()
+
+Show help for the FastME command-line tool.
+"""
 fastme_help() = run(`$(fastme()) -h`)
 
+"""
+    ubtgraph_from_nwk(path::String)
+
+Parse a Newick file at `path` and return the corresponding UBT graph.
+"""
 function ubtgraph_from_nwk(path::String)
     t = open(path) do f
         ln = readline(f)
@@ -15,6 +25,11 @@ function ubtgraph_from_nwk(path::String)
     ubtgraph_from_nwk(t)
 end
 
+"""
+    ubtgraph_from_nwk(t)
+
+Convert a parsed Newick tree `t` to a UBT graph.
+"""
 function ubtgraph_from_nwk(t)
     trav = traversal(t,preorder)
     g = Graph()
@@ -36,6 +51,15 @@ function ubtgraph_from_nwk(t)
     return g
 end
 
+"""
+    fastme_local_search(D::Matrix, g::Graph)
+
+Run FastME local search starting from graph `g` and distance matrix `D`.
+
+# Arguments
+- `D::Matrix`: Distance matrix.
+- `g::Graph`: Initial tree (UBT graph) to start the search from.
+"""
 function fastme_local_search(D::Matrix, g::Graph)
     tmp_tree = "testtree.nwk"
     open(tmp_tree, "w") do f
@@ -50,11 +74,38 @@ function fastme_local_search(D::Matrix, g::Graph)
     return gspr
 end
 
+"""
+    fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
+
+Run FastME local search with distance matrix `D` and initial tree at `tree_path`.
+
+# Arguments
+- `D::Matrix`: Distance matrix.
+- `path::String`: Path to write the distance matrix.
+- `tree_path::String`: Path to write/read the initial tree.
+- `inittree`: Use initial tree (`tree_path`) if true.
+- `verbose`: Print progress if true.
+- `spr`: Use subtree pruning and regrafting if true.
+- `methods`: List of FastME initialization methods to try.
+"""
 function fastme_local_search(D::Matrix, path::String, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
     D_to_txt(path, D)
     fastme_local_search(path, tree_path; methods, inittree, verbose, spr)
 end
 
+"""
+    fastme_local_search(D::Matrix, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
+
+Run FastME local search with distance matrix `D` and output to `tree_path`.
+
+# Arguments
+- `D::Matrix`: Distance matrix.
+- `tree_path::String`: Path to output tree file.
+- `inittree`: Use initial tree if true.
+- `verbose`: Print progress if true.
+- `spr`: Use subtree pruning and regrafting if true.
+- `methods`: List of FastME initialization methods to try.
+"""
 function fastme_local_search(D::Matrix, tree_path::String; inittree = false, verbose = true, spr = true, methods = ["b","o","i","n","u"])
     D_to_txt("tmpDfm.txt", D)
     try 
@@ -64,6 +115,11 @@ function fastme_local_search(D::Matrix, tree_path::String; inittree = false, ver
     end
 end
 
+"""
+    fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::String)
+
+Run FastME local search with distance matrix `D`, path-length matrix `τ`, and output to `tree_path`.
+"""
 function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::String)
     D_to_txt(path,D)
     nwk = PLM_to_nwk(τ)
@@ -73,6 +129,19 @@ function fastme_local_search(D::Matrix, τ::Matrix, path::String, tree_path::Str
     fastme_local_search(path, tree_path, inittree = true)
 end
 
+"""
+    fastme_local_search(path::String, tree_path::String; inittree = false, methods = ["b","o","i","n","u"], verbose = true, spr = true)
+
+Run FastME local search with distance matrix at `path` and output to `tree_path`.
+
+# Arguments
+- `path::String`: Path to distance matrix file.
+- `tree_path::String`: Path to output tree file.
+- `inittree`: Use initial tree if true.
+- `methods`: List of FastME initialization methods to try.
+- `verbose`: Print progress if true.
+- `spr`: Use subtree pruning and regrafting if true.
+"""
 function fastme_local_search(path::String, tree_path::String; inittree = false, methods = ["b","o","i","n","u"], verbose = true, spr = true)
     if inittree
         run(pipeline(`$(fastmeMP()) --spr -i $path -T $(Threads.nthreads()) -o tmp.nwk -w BalLS -m u -u $tree_path`, stdout=devnull))
@@ -113,6 +182,11 @@ function fastme_local_search(path::String, tree_path::String; inittree = false, 
     return ubtgraph_from_nwk(tree_path)
 end
 
+"""
+    read_distance_matrix(path::String)
+
+Read a distance matrix from a file at `path`.
+"""
 function read_distance_matrix(path::String)
     D = open(path) do file
         M = readdlm(file, header = true)[1]
@@ -120,6 +194,11 @@ function read_distance_matrix(path::String)
     end 
 end
 
+"""
+    ubt_to_nwk(g::Graph)
+
+Convert a UBT graph `g` to a Newick string.
+"""
 function ubt_to_nwk(g::Graph)
     n = length(leaves(g))
     nwk = ";"
@@ -163,6 +242,11 @@ function ubt_to_nwk(g::Graph)
     return reverse(nwk)
 end
 
+"""
+    PLM_to_nwk(τ::Matrix)
+
+Convert a path-length matrix `τ` to a Newick string.
+"""
 function PLM_to_nwk(τ::Matrix)
     nwk = ubt_to_nwk(UBT_from_PLM(τ))
 end

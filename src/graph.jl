@@ -5,10 +5,21 @@ import DataStructures.Stack
 
 export UBT_from_PLM, random_subtree, create_random_UBT, path_length_matrix, collaspe_to_inner_star, star_graph, tree_length
 
+"""
+    tree_length(plm::Matrix, D)
+
+Compute the tree length given a path-length matrix `plm` and a distance matrix `D`.
+"""
 function tree_length(plm::Matrix, D)
     sum(D[i,j]*2.0^-plm[i,j] for (i,j) in combinations(1:size(plm,1),2), init = 0.)*2
 end
 
+"""
+    find_cherry(D::Matrix, neighbors)
+
+Find a pair of neighbors (a cherry) in the distance matrix `D` among `neighbors` such that their distance is 2.
+Returns a tuple `(i, j)` or `nothing` if not found.
+"""
 function find_cherry(D::Matrix, neighbors)
     for i in neighbors
         for j in neighbors
@@ -19,8 +30,18 @@ function find_cherry(D::Matrix, neighbors)
     return nothing
 end
 
+"""
+    star_graph(D::Matrix)
+
+Create a star graph with the number of leaves equal to the size of the distance matrix `D`.
+"""
 star_graph(D::Matrix) = star_graph(size(D,1))
 
+"""
+    star_graph(n::Int)
+
+Create a star graph with `n` leaves and return the graph and the center node.
+"""
 function star_graph(n::Int)
     g = Graph(n+1)
     c = n+1
@@ -34,7 +55,6 @@ end
     UBT_from_PLM(PLM::Matrix)
 
 Instantiate the graph object of the UBT represented by the path-length matrix PLM.
-
 """
 function UBT_from_PLM(PLM::Matrix)
     n = size(PLM,1)
@@ -68,20 +88,25 @@ function UBT_from_PLM(PLM::Matrix)
     return g
 end
 
+"""
+    leaves(g)
+
+Return the indices of the leaves of the graph `g`.
+"""
 leaves(g) = 1:(nv(g)÷2+1)
+
+"""
+    inner_nodes(g)
+
+Return the indices of the inner nodes of the graph `g`.
+"""
 inner_nodes(g) = (nv(g)÷2+2):nv(g)
 
 """
-    random_subtree(g, K [, D])
+    random_subtree(g, K)
 
-Samples a subtree of g that is also a UBT with K leaves. 
-Returns `sg, node_map` where `sg` is the subgraph object and `node_map` maps the numbering of the 
-subgraph nodes to the numbering of the original graph `g`.
-
-If D, a symmetric distance matrix between the leaves of `g`, is provided, returns 
-`sg, node_map, D2, leave_map` where D2 is the distance matrix between the leaves of 
-`sg` computed with the recursive average distance. `leave_map` maps the indices of 
-that matrix to the original nodes of `g`. 
+Samples a subtree of `g` that is also a UBT with `K` leaves.
+Returns the subgraph object and a node map.
 """
 function random_subtree(g, K)
     start = rand(inner_nodes(g))
@@ -105,6 +130,12 @@ function random_subtree(g, K)
     return induced_subgraph(g, collect(union(selected, leaves, candidates)))
 end
 
+"""
+    collaspe_to_inner_star(_g, subtree, D::Matrix)
+
+Collapse the subtree to an inner star in the graph `_g` using the distance matrix `D`.
+Returns the modified graph, new distance matrix, center node, and node map.
+"""
 function collaspe_to_inner_star(_g, subtree, D::Matrix) #D is the distance matrix of the leaves, K is number of star branches
     g = copy(_g)
     selected = subtree.inner_nodes
@@ -145,6 +176,12 @@ function collaspe_to_inner_star(_g, subtree, D::Matrix) #D is the distance matri
     return g, D2, c, node_map
 end
 
+"""
+    find_subtree_depths(c, g, subtree_nodes)
+
+Find the depths of leaves in a subtree rooted at `c` in graph `g`.
+Returns a dictionary mapping leaf nodes to their depths.
+"""
 function find_subtree_depths(c, g, subtree_nodes)
     Γ = 1:(nv(g)+2)÷2
     to_expand = Stack{Tuple{Int,Int}}() #(node, depth)
@@ -168,11 +205,20 @@ function find_subtree_depths(c, g, subtree_nodes)
     return leaves_depths
 end
 
-#leavesX contains the depth of each leave of the subtree X
+"""
+    average_dist(D::Matrix, leavesA, leavesB)
+
+Compute the average distance between two sets of leaves using the distance matrix `D`.
+"""
 function average_dist(D::Matrix, leavesA, leavesB)
     @inbounds sum(D[l,m]*2.0^-(leavesA[l]+leavesB[m]) for (l,m) in Iterators.product(keys(leavesA), keys(leavesB)))
 end
 
+"""
+    create_random_UBT(n)
+
+Create a random unrooted binary tree (UBT) with `n` leaves.
+"""
 function create_random_UBT(n)
     g = Graph(n+1)
     for i in 1:n 
@@ -195,12 +241,21 @@ function create_random_UBT(n)
     return g
 end
 
+"""
+    is_ubt(g)
+
+Check if the graph `g` is an unrooted binary tree (UBT).
+"""
 function is_ubt(g)
     c = counter(degree(g))
     return c[1] == length(leaves(g)) && c[3] == length(inner_nodes(g))
 end
 
-#Catanzaro, D., & Pesenti, R. (2019). Enumerating vertices of the balanced minimum evolution polytope. Computers & Operations Research, 109, 209‑217. https://doi.org/10.1016/j.cor.2019.05.001
+"""
+    path_length_matrix(ubt::Graph)
+
+Compute the path-length matrix for a given UBT graph.
+"""
 function path_length_matrix(ubt::Graph)
     @assert is_ubt(ubt) "Graph is not an UBT"
     s = prufer_encode(ubt)
@@ -241,6 +296,11 @@ function path_length_matrix(ubt::Graph)
     return τ
 end
 
+"""
+    compute_splits(g::Graph)
+
+Compute all splits (bipartitions) of the taxa induced by the edges of the tree `g`.
+"""
 function compute_splits(g::Graph) 
     if length(vertices(g)) == length(edges(g)) + 1
         compute_splits(g, length(leaves(g))+1)
@@ -250,6 +310,11 @@ function compute_splits(g::Graph)
     end
 end
 # root must be |Γ|+1, usually the center of the star_graph
+"""
+    compute_splits(g::Graph, root)
+
+Compute all splits of the taxa induced by the edges of the tree `g` rooted at `root`.
+"""
 function compute_splits(g::Graph, root)
     taxa = Set(collect(1:root-1))
 
@@ -287,8 +352,18 @@ function compute_splits(g::Graph, root)
     return splits
 end
 
+"""
+    are_same_topologies(g1::Graph, g2::Graph)
+
+Check if two graphs `g1` and `g2` have the same tree topology.
+"""
 are_same_topologies(g1::Graph, g2::Graph) = are_same_topologies(compute_splits(g1), compute_splits(g2))
 
+"""
+    are_same_topologies(splitsT1, splitsT2)
+
+Check if two sets of splits represent the same tree topology.
+"""
 function are_same_topologies(splitsT1, splitsT2)
     if length(splitsT1) != length(splitsT2) 
         @error "Trees do not have same number of splits"

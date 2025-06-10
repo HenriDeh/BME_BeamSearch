@@ -1,5 +1,17 @@
 using Printf
+
+"""
+    ndecdigits(v)
+
+Return the number of decimal digits for a floating-point value `v`.
+"""
 ndecdigits(v) = ceil(Int, -log10(min(eps(v), eps(typeof(v)))))
+
+"""
+    expand_float_string(s)
+
+Expand a float string `s` to a fixed-point representation if necessary.
+"""
 function expand_float_string(s) 
     if !occursin("e", s) && length(s) < 23
         return s
@@ -10,6 +22,14 @@ function expand_float_string(s)
     end
 end
 
+"""
+    to_phylip(path::String)
+
+Convert a distance matrix file at `path` to PHYLIP format.
+
+# Arguments
+- `path::String`: Path to the file containing the distance matrix. The file will be overwritten in PHYLIP format.
+"""
 function to_phylip(path::String)
     rl = readlines(path)
     file = open(path, "w") #do file
@@ -57,6 +77,15 @@ function to_phylip(path::String)
 end
 
 
+"""
+    D_to_txt(datapath, D::Matrix)
+
+Write the distance matrix `D` to a text file at `datapath` in PHYLIP format.
+
+# Arguments
+- `datapath`: Output file path.
+- `D::Matrix`: Distance matrix to write.
+"""
 function D_to_txt(datapath, D::Matrix)
     open(datapath, "w") do f
         println(f, string(size(D,1)))

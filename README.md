@@ -1,7 +1,8 @@
 # BalancedMinimumEvolution
 
 This repository contains Julia code for reproducing the experiments carried out in the following publication.
-Catanzaro, D., Dehaybe, H., & Pesenti, R. (2025). New Heuristics for Phylogeny Estimation under the Balanced Minimum Evolution Criterion. Bioinformatics. (Under review)
+
+Catanzaro, D., Dehaybe, H., & Pesenti, R. (2025). New Heuristics for Phylogeny Estimation under the Balanced Minimum Evolution Criterion. _Bioinformatics_. (Under review)
 
 ## Getting Started
 

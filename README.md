@@ -1,6 +1,7 @@
 # BalancedMinimumEvolution
 
-This repository contains Julia code for the Balanced Minimum Evolution (BME) problem, including beam search algorithms and experimental scripts.
+This repository contains Julia code for reproducing the experiments carried out in the following publication.
+Catanzaro, D., Dehaybe, H., & Pesenti, R. (2025). New Heuristics for Phylogeny Estimation under the Balanced Minimum Evolution Criterion. Bioinformatics. (Under review)
 
 ## Getting Started
 
